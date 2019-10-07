@@ -29,17 +29,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "merge/merge.h"
+#include "combine/merge.h"
 /* -------------------------------------------------------------------------- */
 int main(int argc, char* argv[]){
 
   int my_rank = 0;
   int nb_ranks = 0;
-  int threading = 0;
+  int threading = 1;
   MPI_Comm comm = MPI_COMM_WORLD;
 
   // init MPI
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &threading);
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &threading);
   MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &my_rank);
 

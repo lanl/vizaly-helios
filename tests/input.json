@@ -1,0 +1,46 @@
+{
+  "input": {
+    "filetype": "HACC",
+    "scalars": [ "x", "y", "z", "vx", "vy", "vz" ]
+  },
+  "compress": {
+    "run-path":"build/",
+    "input": "../tests/data.reduced.mpicosmo",
+    "output": {
+      "dump": "data",
+      "log": "test",
+      "stats": "stats_test"
+    },
+    "kernels": [
+      {
+        "name": "blosc",
+        "prefix": "blosc_"
+      },
+      {
+        "name": "sz",
+        "prefix": "sz-pos-vel",
+        "params": [
+          { "scalar": [ "x", "y", "z" ], "abs": 1E-3 },
+          { "scalar": [ "vx", "vy", "vz"], "pw_rel": 1E-2 }
+        ]
+      },
+      {
+        "name": "fpzip",
+        "prefix": "fpzip-24bits",
+        "bits": 24
+      },
+      {
+        "name": "zfp",
+        "prefix": "zfp-abs0.01",
+        "abs": 1E-2
+      }
+    ],
+    "metrics": [
+      { "name": "absolute_error" },
+      { "name": "relative_error" },
+      { "name": "mean_square_error" },
+      { "name": "psnr" }
+    ]
+  }
+}
+

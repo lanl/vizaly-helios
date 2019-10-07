@@ -31,7 +31,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <ctime>
 #include <cstdlib>
@@ -55,7 +54,7 @@ int main(int argc, char* argv[]) {
   int threading = 1;
   MPI_Comm comm = MPI_COMM_WORLD;
 
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &threading);
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &threading);
   MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &rank);
 
@@ -101,6 +100,9 @@ int main(int argc, char* argv[]) {
       tools::createFolder(output_path);
   }
 
+  int const nb_compressors = compressors.size();
+  int const nb_metrics = metrics.size();
+
   // For humans; all seems valid, let's start ...
   if (rank == 0) {
     std::cout << "Running compression ... " << std::endl;
@@ -110,11 +112,15 @@ int main(int argc, char* argv[]) {
   //
   // Create log and metrics files
   Timer clock_overall;
-  std::stringstream debug_log;
+  #if !defined(NDEBUG)
+    std::stringstream debug_log;
+  #endif
   std::stringstream metrics_info;
   std::stringstream output_csv;
 
-  tools::writeLog(logs, debug_log.str());
+  #if !defined(NDEBUG)
+    tools::dump(logs, debug_log.str(), ".log");
+  #endif
 
   output_csv << "Compressor_field" << "__" << "params" << ", " << "name, ";
   for (auto&& metric : metrics)
@@ -150,7 +156,7 @@ int main(int argc, char* argv[]) {
     io_manager->saveParams();
 
   // Cycle through compressors and parameters
-  for (int c = 0; c < compressors.size(); ++c) {
+  for (int c = 0; c < nb_compressors; ++c) {
     // initialize compressor
     compress_manager = CompressorFactory::create(compressors[c]);
     if (compress_manager == nullptr) {
@@ -183,9 +189,10 @@ int main(int argc, char* argv[]) {
     metrics_info << "---------------------------------------" << std::endl;
     metrics_info << "Compressor: " << compress_manager->getName() << std::endl;
 
-    debug_log << "---------------------------------------" << std::endl;
-    debug_log << "Compressor: " << compress_manager->getName() << std::endl;
-
+    #if !defined(NDEBUG)
+      debug_log << "---------------------------------------" << std::endl;
+      debug_log << "Compressor: " << compress_manager->getName() << std::endl;
+    #endif
     // Cycle through scalars
     for (auto& scalar : scalars) {
       Timer clock_zip;
@@ -225,9 +232,11 @@ int main(int argc, char* argv[]) {
       }
 
       // log stuff
-      debug_log << io_manager->getDataInfo();
-      debug_log << io_manager->getLog();
-      tools::appendLog(logs, debug_log);
+      #if !defined(NDEBUG)
+        debug_log << io_manager->getDataInfo();
+        debug_log << io_manager->getLog();
+        tools::append(logs, debug_log, ".log");
+      #endif
 
       metrics_info << compress_manager->getInfos() << std::endl;
       output_csv << compress_manager->getName() << "_" << scalar;
@@ -268,28 +277,30 @@ int main(int argc, char* argv[]) {
       MPI_Allreduce(local_size  , total_size  , 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
       MPI_Allreduce(local_size+1, total_size+1, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
 
-      // get compression ratio
-      float const compression_ratio =
-        static_cast<float>(total_size[1]) / static_cast<float>(total_size[0]);
+      #if !defined(NDEBUG)
+        // get compression ratio
+        float const compression_ratio =
+          static_cast<float>(total_size[1]) / static_cast<float>(total_size[0]);
 
-      debug_log << std::endl << std::endl;
-      debug_log << "local compressed size: "   << local_size[0] << ", ";
-      debug_log << "total compressed size: "   << total_size[0] << std::endl;
-      debug_log << "local uncompressed size: " << local_size[1] << ", ";
-      debug_log << "total uncompressed size: " << total_size[1] << std::endl;
-      debug_log << "Compression ratio: " << compression_ratio << std::endl;
+        debug_log << std::endl << std::endl;
+        debug_log << "local compressed size: "   << local_size[0] << ", ";
+        debug_log << "total compressed size: "   << total_size[0] << std::endl;
+        debug_log << "local uncompressed size: " << local_size[1] << ", ";
+        debug_log << "total uncompressed size: " << total_size[1] << std::endl;
+        debug_log << "Compression ratio: " << compression_ratio << std::endl;
 
-      tools::appendLog(logs, compress_manager->getLog());
-      compress_manager->clearLog();
+        tools::append(logs, compress_manager->getLog(), ".log");
+        compress_manager->clearLog();
 
-      //
+        debug_log << std::endl;
+        debug_log << "----- " << scalar << " error metrics ----- " << std::endl;
+      #endif
+
       // metrics
-      debug_log << std::endl;
-      debug_log << "----- " << scalar << " error metrics ----- " << std::endl;
       metrics_info << std::endl;
       metrics_info << "Field: " << scalar << std::endl;
 
-      for (int m = 0; m < metrics.size(); ++m) {
+      for (int m = 0; m < nb_metrics; ++m) {
         metrics_manager = MetricsFactory::create(metrics[m]);
         if (metrics_manager == nullptr) {
           if (rank == 0) {
@@ -321,7 +332,9 @@ int main(int argc, char* argv[]) {
           io_manager->getNumElements()
         );
 
-        debug_log << metrics_manager->getLog();
+        #if !defined(NDEBUG)
+          debug_log << metrics_manager->getLog();
+        #endif
         metrics_info << metrics_manager->getLog();
         output_csv << metrics_manager->getGlobalValue() << ", ";
 
@@ -332,18 +345,18 @@ int main(int argc, char* argv[]) {
             outputHistogramName += tools::extractFileName(input) + "_" + compressors[c];
             outputHistogramName += "_" + scalar + "_" + metrics[m] + "_";
             outputHistogramName += compress_manager->getInfos() + "_hist.py";
-            tools::writeFile(outputHistogramName, metrics_manager->additionalOutput);
+            tools::dump(outputHistogramName, metrics_manager->additionalOutput);
           }
         }
         metrics_manager->close();
       }
+      #if !defined(NDEBUG)
+        debug_log << "-----------------------------" << std::endl;
+        debug_log << std::endl;
+        debug_log << "Memory in use: " << memory_manager.getMemoryInUseInMB();
+        debug_log << " MB" << std::endl;
+      #endif
 
-      debug_log << "-----------------------------" << std::endl;
-      debug_log << std::endl;
-      debug_log << "Memory in use: " << memory_manager.getMemoryInUseInMB();
-      debug_log << " MB" << std::endl;
-
-      //
       // Metrics Computation
       double compress_time = clock_zip.getDuration();
       double decompress_time = clock_unzip.getDuration();
@@ -364,10 +377,14 @@ int main(int argc, char* argv[]) {
       MPI_Reduce(&decompress_throughput, min_throughput+1, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
 
       if (dump) {
-        debug_log << "writing: " << scalar << std::endl;
+        #if !defined(NDEBUG)
+          debug_log << "writing: " << scalar << std::endl;
+        #endif
 
         io_manager->save(scalar, raw_decomp);
-        debug_log << io_manager->getLog();
+        #if !defined(NDEBUG)
+          debug_log << io_manager->getLog();
+        #endif
       }
 
       // deallocate
@@ -375,22 +392,24 @@ int main(int argc, char* argv[]) {
 
       io_manager->close();
       memory_manager.stop();
-      //
-      // log stuff
-      auto const memory_leaked = memory_manager.getMemorySizeInMB();
 
-      debug_log << std::endl;
-      debug_log << "Compress time: " << compress_time << std::endl;
-      debug_log << "Decompress time: " << decompress_time << std::endl;
-      debug_log << std::endl;
-      debug_log << "Memory leaked: " << memory_leaked << " MB" << std::endl;
-      debug_log << ".........................................";
-      debug_log << std::endl << std::endl;
-      tools::appendLog(logs, debug_log);
+      #if !defined(NDEBUG)
+        auto const memory_leaked = memory_manager.getMemorySizeInMB();
+
+        debug_log << std::endl;
+        debug_log << "Compress time: " << compress_time << std::endl;
+        debug_log << "Decompress time: " << decompress_time << std::endl;
+        debug_log << std::endl;
+        debug_log << "Memory leaked: " << memory_leaked << " MB" << std::endl;
+        debug_log << ".........................................";
+        debug_log << std::endl << std::endl;
+        tools::append(logs, debug_log, ".log");
+      #endif
 
       if (rank == 0) {
 
-        float const ratio = total_size[1] / (float) total_size[0];
+        float const ratio =
+          static_cast<float>(total_size[1]) / static_cast<float>(total_size[0]);
 
         metrics_info << "Max Compression Throughput: "   << max_throughput[0];
         metrics_info << " MB/s" << std::endl;
@@ -408,8 +427,8 @@ int main(int argc, char* argv[]) {
         output_csv << min_throughput[1] << ", ";
         output_csv << ratio << std::endl;
 
-        tools::writeFile(stats + ".txt", metrics_info.str());
-        tools::writeFile(stats + ".csv", output_csv.str());
+        tools::dump(stats + ".txt", metrics_info.str());
+        tools::dump(stats + ".csv", output_csv.str());
       }
 
       MPI_Barrier(comm);
@@ -419,7 +438,9 @@ int main(int argc, char* argv[]) {
       Timer clock_dump;
       clock_dump.start();
 
-      debug_log << "Dumping data ... " << std::endl;
+      #if !defined(NDEBUG)
+        debug_log << "Dumping data ... " << std::endl;
+      #endif
 
       // Pass data that was not compressed
       for (auto&& param : io_manager->scalar_data) {
@@ -440,19 +461,24 @@ int main(int argc, char* argv[]) {
       io_manager->dump(output_decompressed);
       clock_dump.stop();
 
-      debug_log << io_manager->getLog();
-      debug_log << "Dumping data took: " << clock_dump.getDuration() << " s.";
-      debug_log << std::endl;
-      tools::appendLog(logs, debug_log);
+      #if !defined(NDEBUG)
+        debug_log << io_manager->getLog();
+        debug_log << "Dumping data took: " << clock_dump.getDuration() << " s.";
+        debug_log << std::endl;
+        tools::append(logs, debug_log, ".log");
+      #endif
     }
     compress_manager->close();
   }
 
   clock_overall.stop();
-  debug_log << std::endl;
-  debug_log << "Total run time: " << clock_overall.getDuration() << " s.";
-  debug_log << std::endl;
-  tools::appendLog(logs, debug_log);
+
+  #if !defined(NDEBUG)
+    debug_log << std::endl;
+    debug_log << "Total run time: " << clock_overall.getDuration() << " s.";
+    debug_log << std::endl;
+    tools::append(logs, debug_log, ".log");
+  #endif
 
   // For humans
   if (rank == 0) {

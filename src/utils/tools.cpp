@@ -34,7 +34,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
+
 #include "utils/tools.h"
 #include "utils/json.h"
 /* -------------------------------------------------------------------------- */
@@ -60,11 +60,10 @@ bool createFolder(std::string const &folder) {
   folder = ".\\" + folderName;
 #endif
 
-  struct stat finfo{};
-  int res = stat(folder.c_str(), &finfo);
+  int const res = stat(folder.c_str(), &file_info);
 
   // Directory already exists
-  if (finfo.st_mode & S_IFDIR) {
+  if (file_info.st_mode & S_IFDIR) {
     return true;
   } else if (res != 0) {
     const int dir_err = mkdir(folder.c_str(), S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
@@ -149,43 +148,25 @@ bool validParams(int argc, char **argv, int rank, int nb_ranks) {
 }
 
 /* -------------------------------------------------------------------------- */
-void writeFile(std::string const& path, std::string const& content) {
-  std::ofstream file(path, std::ios::out);
+void dump(std::string const& path, std::string const& content, std::string const& ext) {
+  std::ofstream file(path + ext, std::ios::out);
   file << content;
   file.close();
 }
 
 /* -------------------------------------------------------------------------- */
-void writeLog(std::string const& path, std::string const& content) {
+void append(std::string const& path, std::string const& content, std::string const& ext) {
 #ifndef NDEBUG
-  std::ofstream file(path + ".log", std::ios::out);
-  file << content;
-  file.close();
-#endif
-}
-
-/* -------------------------------------------------------------------------- */
-void writeLog(std::string const& path, std::stringstream content) {
-#ifndef NDEBUG
-  std::ofstream file(path + ".log", std::ios::out);
-  file << content.str();
-  file.close();
-#endif
-}
-
-/* -------------------------------------------------------------------------- */
-void appendLog(std::string const& path, std::string const& content) {
-#ifndef NDEBUG
-  std::ofstream file(path + ".log", std::ios::out|std::ios::app);
+  std::ofstream file(path + ext, std::ios::out|std::ios::app);
   file << content;
   file.close();
 #endif
 }
 
 /* -------------------------------------------------------------------------- */
-void appendLog(std::string const& path, std::stringstream& content) {
+void append(std::string const& path, std::stringstream& content, std::string const& ext) {
 #ifndef NDEBUG
-  std::ofstream file(path + ".log", std::ios::out|std::ios::app);
+  std::ofstream file(path + ext, std::ios::out|std::ios::app);
   file << content.str();
   file.close();
   content.str("");  // clears the log

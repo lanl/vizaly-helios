@@ -33,17 +33,18 @@
 /* -------------------------------------------------------------------------- */
 #include <string>
 #include <sstream>
+#include <sys/stat.h>
 /* -------------------------------------------------------------------------- */
 namespace tools {
+
+  static struct stat file_info;
 
   std::string base(std::string const& path);
   bool createFolder(std::string const& folder);
   bool isPowerOfTwo(int n);
   std::string extractFileName(std::string const& input);
   bool validParams(int argc, char* argv[], int rank=0, int nb_ranks=1);
-  void writeFile(std::string const& path, std::string const& content);
-  void writeLog(std::string const& path, std::string const& content);
-  void writeLog(std::string const& path, std::stringstream content);
-  void appendLog(std::string const& path, std::string const& content);
-  void appendLog(std::string const& path, std::stringstream& content);
+  void dump(std::string const& path, std::string const& content, std::string const& ext="");
+  void append(std::string const& path, std::string const& content, std::string const& ext="");
+  void append(std::string const& path, std::stringstream& content, std::string const& ext="");
 }

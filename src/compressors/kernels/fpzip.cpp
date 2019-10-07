@@ -29,6 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if ENABLE_FPZIP
+/* -------------------------------------------------------------------------- */
 #include <sstream>
 #include <limits.h>
 #include <math.h>
@@ -36,10 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-/* -------------------------------------------------------------------------- */
 #include "compressors/kernels/fpzip.hpp"
 #include "utils/timer.h"
-
 /* -------------------------------------------------------------------------- */
 int FPZIPCompressor::compress
   (void *input, void *&output, std::string type, size_t type_size, size_t *n) {
@@ -123,10 +123,10 @@ int FPZIPCompressor::decompress
       fpz->prec = std::stoi(value);
   }
 
-  fpz->nx = n[0];
-  fpz->ny = (n[1] != 0 ? n[1] : 1);
-  fpz->nz = (n[2] != 0 ? n[2] : 1);
-  fpz->nf = (n[3] != 0 ? n[3] : 1);
+  fpz->nx = static_cast<int>(n[0]);
+  fpz->ny = static_cast<int>(n[1] != 0 ? n[1] : 1);
+  fpz->nz = static_cast<int>(n[2] != 0 ? n[2] : 1);
+  fpz->nf = static_cast<int>(n[3] != 0 ? n[3] : 1);
 
   if (not fpzip_read(fpz, output)) {
     std::cerr << "Decompression failed: "<< fpzip_errstr[fpzip_errno] << std::endl;
@@ -144,3 +144,4 @@ int FPZIPCompressor::decompress
   return EXIT_SUCCESS;
 }
 /* -------------------------------------------------------------------------- */
+#endif

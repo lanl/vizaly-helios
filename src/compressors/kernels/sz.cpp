@@ -29,11 +29,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sstream>
+#if ENABLE_SZ
 /* -------------------------------------------------------------------------- */
+#include <sstream>
 #include "compressors/kernels/sz.hpp"
 #include "utils/timer.h"
-
 /* -------------------------------------------------------------------------- */
 int SZCompressor::compress
   (void* input, void*& output, std::string type, size_t type_size, size_t* n) {
@@ -90,11 +90,12 @@ int SZCompressor::compress
   output = data;
   bytes = size;
   timer.stop();
+  auto const input_bytes = static_cast<float>(type_size * numel);
 
   log << std::endl << name;
-  log << " ~ InputBytes: " << type_size * numel;
+  log << " ~ InputBytes: " << input_bytes;
   log << ", OutputBytes: " << size;
-  log << ", cRatio: " << (type_size*numel / (float)size);
+  log << ", cRatio: " << input_bytes / static_cast<float>(size);
   log << ", #elements: " << numel << std::endl;
 
   log << " ~ Mode used: " << _mode;
@@ -134,3 +135,4 @@ int SZCompressor::decompress
   return EXIT_SUCCESS;
 }
 /* -------------------------------------------------------------------------- */
+#endif

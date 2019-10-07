@@ -28,7 +28,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
+#if ENABLE_BLOSC
+/* -------------------------------------------------------------------------- */
 #include "compressors/kernels/blosc.hpp"
 #include "utils/timer.h"
 
@@ -102,3 +103,4 @@ int BLOSCCompressor::decompress
   return EXIT_SUCCESS;
 }
 /* -------------------------------------------------------------------------- */
+#endif

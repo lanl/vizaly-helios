@@ -42,23 +42,23 @@ class CompressorFactory {
 
 public:
   static CompressorInterface* create(std::string const& name) {
-#if CBENCH_HAS_BLOSC
+#if ENABLE_BLOSC
     if (name == "blosc")
       return new BLOSCCompressor();
 #endif
-#if CBENCH_HAS_FPZIP
+#if ENABLE_FPZIP
     if (name == "fpzip")
       return new FPZIPCompressor();
 #endif
-#if CBENCH_HAS_ISABELA
+#if ENABLE_ISABELA
     if (name == "isabela")
       return new IsabelaCompressor();
 #endif
-#if CBENCH_HAS_SZ
+#if ENABLE_SZ
     if (name == "sz")
       return new SZCompressor();
 #endif
-#if CBENCH_HAS_ZFP
+#if ENABLE_ZFP
     if (name == "zfp")
       return new ZFPCompressor();
 #endif

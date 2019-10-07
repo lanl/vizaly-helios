@@ -29,11 +29,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
+#if ENABLE_ISABELA
+/* -------------------------------------------------------------------------- */
+#include <cstring>
+#include <cassert>
+#include <cstdlib>
 #include <sstream>
 #include "compressors/kernels/isabela.hpp"
 #include "utils/timer.h"
@@ -111,11 +111,12 @@ int IsabelaCompressor::compress
 
   timer.stop();
   bytes = csize;
+  auto const input_bytes = static_cast<float>(type_size * numel);
 
   log << std::endl << name;
-  log << " ~ InputBytes: " << type_size * numel;
+  log << " ~ InputBytes: " << input_bytes;
   log << ", OutputBytes: " << csize;
-  log << ", cRatio: " << type_size * numel / static_cast<float>(csize);
+  log << ", cRatio: " << input_bytes / static_cast<float>(csize);
   log << ", #elements: " << numel << std::endl;
   log << name << " ~ CompressTime: " << timer.getDuration() << " s" << std::endl;
 
@@ -198,3 +199,4 @@ int IsabelaCompressor::decompress
   return EXIT_SUCCESS;
 }
 /* -------------------------------------------------------------------------- */
+#endif

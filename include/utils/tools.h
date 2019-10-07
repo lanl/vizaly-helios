@@ -2,7 +2,7 @@
  * Copyright (c) 2019, Los Alamos National Laboratory
  * All rights reserved.
  *
- * Author: Hoby Rakotoarivelo
+ * Author: Pascal Grosset and Hoby Rakotoarivelo
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,74 +29,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* -------------------------------------------------------------------------- */
 #pragma once
 /* -------------------------------------------------------------------------- */
-#include <iostream>
+#include <string>
 #include <sstream>
-#include <stdlib.h>
-#include <mpi.h>
-
-#include "utils/json.h"
-#include "utils/timer.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 /* -------------------------------------------------------------------------- */
 namespace tools {
-/* -------------------------------------------------------------------------- */
-inline bool valid(int argc, char* argv[], int my_rank, int nb_ranks) {
 
-  if (argc < 2) {
-    if (my_rank == 0)
-      std::cerr << "Usage: mpirun -n <int> ./analyzer [input-json]" << std::endl;
-    return false;
-  }
-
-  // check input json file
-  std::string path(argv[1]);
-  std::ifstream file(path);
-  nlohmann::json json;
-
-  if (not file.good()) {
-    if (my_rank == 0)
-      std::cerr << "Error while opening parameter file: "<< argv[1] << std::endl;
-    file.close();
-    return false;
-  }
-
-  try {
-    // pass file to json parser
-    file >> json;
-
-    // retrieve input file
-    if (json["input"]["filetype"] != "HACC") {
-      if (my_rank == 0)
-        std::cerr << "Only HACC data is supported" << std::endl;
-      file.close();
-      return false;
-    }
-
-    file.close();
-    return true;
-  } catch(nlohmann::json::parse_error& e) {
-    if (my_rank == 0)
-      std::cerr << "Invalid JSON file " << path << "\n" << e.what() << std::endl;
-    file.close();
-    return false;
-  }
+  std::string base(std::string const& path);
+  bool createFolder(std::string const& folder);
+  bool isPowerOfTwo(int n);
+  std::string extractFileName(std::string const& input);
+  bool validParams(int argc, char* argv[], int rank=0, int nb_ranks=1);
+  void writeFile(std::string const& path, std::string const& content);
+  void writeLog(std::string const& path, std::string const& content);
+  void writeLog(std::string const& path, std::stringstream content);
+  void appendLog(std::string const& path, std::string const& content);
+  void appendLog(std::string const& path, std::stringstream& content);
 }
-/* -------------------------------------------------------------------------- */
-inline std::string base(std::string path) {
-  char sep = '/';
-#ifdef _WIN32
-  sep = '\\';
-#endif
-
-  size_t i = path.rfind(sep, path.length());
-  if (i != std::string::npos) {
-    return std::string(path.substr(i+1, path.length() - i));
-  }
-  return std::string("");
-}
-/* -------------------------------------------------------------------------- */
-} // namespace tools

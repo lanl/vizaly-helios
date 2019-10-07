@@ -2,7 +2,7 @@
  * Copyright (c) 2019, Los Alamos National Laboratory
  * All rights reserved.
  *
- * Authors: Pascal Grosset
+ * Authors: Pascal Grosset and Hoby Rakotoarivelo
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,46 +28,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _TIMER_H_
-#define _TIMER_H_
 
+#pragma once
+/* -------------------------------------------------------------------------- */
 #include <chrono>
-#include <string>
 #include <ctime>
 #include <sstream>
+/* -------------------------------------------------------------------------- */
+class Timer {
 
-class Timer
-{
-	std::chrono::time_point<std::chrono::system_clock> startTime, endTime;
-	std::chrono::duration<double> elapsed_seconds;
+	std::chrono::high_resolution_clock::time_point tic {}, toc {};
+	std::chrono::duration<double> elapsed_seconds {};
 
   public:
-	Timer();
-	~Timer();
+	 Timer() = default;
+	~Timer() = default;
 
-	void start();
-	void stop();
-	double getDuration();					// time in seconds
+	void start() {
+    tic = std::chrono::high_resolution_clock::now();
+	}
 
-	static std::string getCurrentTime();	// get the current time
+	void stop() {
+    toc = std::chrono::high_resolution_clock::now();
+    elapsed_seconds = toc - tic;
+	}
+
+	double getDuration() {
+    return elapsed_seconds.count();
+	}
+
+	static std::string getCurrentTime() {
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+
+    std::stringstream buffer;
+    buffer << "_" << 1 + ltm->tm_mon << "_" << ltm->tm_mday << "__";
+    buffer << ltm->tm_hour << "_" << ltm->tm_min << "_" << ltm->tm_sec;
+    buffer << "_" << std::endl;
+    return buffer.str();
+	}
 };
-
-inline Timer::Timer() {}
-inline Timer::~Timer() {}
-
-inline void Timer::start() { startTime = std::chrono::system_clock::now(); }
-inline void Timer::stop() { endTime = std::chrono::system_clock::now(); elapsed_seconds = endTime - startTime; }
-inline double Timer::getDuration() { return elapsed_seconds.count(); }
-
-
-inline std::string Timer::getCurrentTime()
-{
-	time_t now = time(0);
-	tm *ltm = localtime(&now);
-
-	std::stringstream ss;
-	ss << "_" << 1 + ltm->tm_mon << "_" << ltm->tm_mday << "__" << ltm->tm_hour << "_" << ltm->tm_min << "_" << ltm->tm_sec << "_" << std::endl;
-	return ss.str();
-}
-
-#endif
+/* -------------------------------------------------------------------------- */

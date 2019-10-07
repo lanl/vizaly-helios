@@ -62,6 +62,7 @@ target_include_directories(merger PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(helios PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_sources(cbench PRIVATE
+		src/utils/tools.cpp
 		src/utils/memory.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp
@@ -78,6 +79,7 @@ target_sources(cbench PRIVATE
 		src/compressors/run.cpp)
 
 target_sources(helios PRIVATE
+		src/utils/tools.cpp
 		src/utils/memory.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp
@@ -85,6 +87,7 @@ target_sources(helios PRIVATE
 		src/analysis/run.cpp)
 
 target_sources(merger PRIVATE
+		src/utils/tools.cpp
 		src/utils/memory.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp

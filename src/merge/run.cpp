@@ -44,7 +44,7 @@ int main(int argc, char* argv[]){
   MPI_Comm_rank(comm, &my_rank);
 
   // basic input checks
-  if (not tools::valid(argc, argv, my_rank, nb_ranks)) {
+  if (not tools::validParams(argc, argv, my_rank, nb_ranks)) {
     MPI_Finalize();
     return EXIT_FAILURE;
   }

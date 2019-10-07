@@ -30,72 +30,22 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <vector>
-#include <time.h>
-#include <stdlib.h>
+#include <ctime>
+#include <cstdlib>
 #include <mpi.h>
-/* -------------------------------------------------------------------------- */
 #include "io/interface.h"
 #include "io/hacc.h"
-/* -------------------------------------------------------------------------- */
 #include "compressors/kernels/interface.h"
 #include "compressors/kernels/factory.h"
 #include "compressors/metrics/interface.h"
 #include "compressors/metrics/factory.h"
-/* -------------------------------------------------------------------------- */
 #include "utils/json.h"
 #include "utils/timer.h"
-#include "utils/log.h"
 #include "utils/memory.h"
-#include "utils/utils.h"
-
-/* -------------------------------------------------------------------------- */
-bool valid(int argc, char **argv, int rank, int nb_ranks) {
-  // check args
-  if (argc < 2) {
-    if (rank == 0)
-      std::cerr << "Usage: mpirun [nranks] input.json" << std::endl;
-    return false;
-  }
-
-  // Check if input file provided exists
-  if (not fileExists(argv[1])) {
-    if (rank == 0) {
-      std::cerr << "Error: could not find input file: " << argv[1] << std::endl;
-    }
-    return false;
-  }
-
-  // validate JSON file
-  nlohmann::json json;
-
-  try {
-    std::ifstream file(argv[1]);
-    file >> json;
-  }
-  catch (nlohmann::json::parse_error& e) {
-    if (rank == 0) {
-      std::cerr << "Error: invalid input file " << argv[1] << std::endl;
-      std::cerr << e.what() << std::endl;
-      std::cerr << "Please verify your JSON file using e.g. ";
-      std::cerr << "https://jsonformatter.curiousconcept.com" << std::endl;
-    }
-    return false;
-  }
-
-  // check if powers of 2 number of ranks
-  if (json["compress"]["output"].count("dump")) {
-    if (not isPowerOfTwo(nb_ranks)) {
-      if (rank == 0) {
-        std::cerr << "Please run with powers of two ranks when dumping HACC files.";
-        std::cerr << std::endl;
-      }
-      return false;
-    }
-  }
-  return true;
-}
+#include "utils/tools.h"
 
 /* -------------------------------------------------------------------------- */
 int main(int argc, char* argv[]) {
@@ -110,7 +60,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(comm, &rank);
 
   // check input params
-  if (not valid(argc, argv, rank, nb_ranks)) {
+  if (not tools::validParams(argc, argv, rank, nb_ranks)) {
     MPI_Finalize();
     return EXIT_FAILURE;
   }
@@ -145,10 +95,10 @@ int main(int argc, char* argv[]) {
 
   if (json["compress"]["output"].count("dump")) {
     dump = true;
-    output_file = extractFileName(input);
+    output_file = tools::extractFileName(input);
     output_path = json["compress"]["output"]["dump"];
     if (rank == 0)
-      createFolder(output_path);
+      tools::createFolder(output_path);
   }
 
   // For humans; all seems valid, let's start ...
@@ -164,7 +114,7 @@ int main(int argc, char* argv[]) {
   std::stringstream metrics_info;
   std::stringstream output_csv;
 
-  writeLog(logs, debug_log.str());
+  tools::writeLog(logs, debug_log.str());
 
   output_csv << "Compressor_field" << "__" << "params" << ", " << "name, ";
   for (auto&& metric : metrics)
@@ -277,7 +227,7 @@ int main(int argc, char* argv[]) {
       // log stuff
       debug_log << io_manager->getDataInfo();
       debug_log << io_manager->getLog();
-      appendLog(logs, debug_log);
+      tools::appendLog(logs, debug_log);
 
       metrics_info << compress_manager->getInfos() << std::endl;
       output_csv << compress_manager->getName() << "_" << scalar;
@@ -319,7 +269,8 @@ int main(int argc, char* argv[]) {
       MPI_Allreduce(local_size+1, total_size+1, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
 
       // get compression ratio
-      float const compression_ratio = total_size[1] / (float) total_size[0];
+      float const compression_ratio =
+        static_cast<float>(total_size[1]) / static_cast<float>(total_size[0]);
 
       debug_log << std::endl << std::endl;
       debug_log << "local compressed size: "   << local_size[0] << ", ";
@@ -328,7 +279,7 @@ int main(int argc, char* argv[]) {
       debug_log << "total uncompressed size: " << total_size[1] << std::endl;
       debug_log << "Compression ratio: " << compression_ratio << std::endl;
 
-      appendLog(logs, compress_manager->getLog());
+      tools::appendLog(logs, compress_manager->getLog());
       compress_manager->clearLog();
 
       //
@@ -376,12 +327,12 @@ int main(int argc, char* argv[]) {
 
         if (rank == 0) {
           if (not metrics_manager->additionalOutput.empty()) {
-            createFolder("logs");
+            tools::createFolder("logs");
             std::string outputHistogramName = "logs/";
-            outputHistogramName += extractFileName(input) + "_" + compressors[c];
+            outputHistogramName += tools::extractFileName(input) + "_" + compressors[c];
             outputHistogramName += "_" + scalar + "_" + metrics[m] + "_";
             outputHistogramName += compress_manager->getInfos() + "_hist.py";
-            writeFile(outputHistogramName, metrics_manager->additionalOutput);
+            tools::writeFile(outputHistogramName, metrics_manager->additionalOutput);
           }
         }
         metrics_manager->close();
@@ -435,7 +386,7 @@ int main(int argc, char* argv[]) {
       debug_log << "Memory leaked: " << memory_leaked << " MB" << std::endl;
       debug_log << ".........................................";
       debug_log << std::endl << std::endl;
-      appendLog(logs, debug_log);
+      tools::appendLog(logs, debug_log);
 
       if (rank == 0) {
 
@@ -457,8 +408,8 @@ int main(int argc, char* argv[]) {
         output_csv << min_throughput[1] << ", ";
         output_csv << ratio << std::endl;
 
-        writeFile(stats + ".txt", metrics_info.str());
-        writeFile(stats + ".csv", output_csv.str());
+        tools::writeFile(stats + ".txt", metrics_info.str());
+        tools::writeFile(stats + ".csv", output_csv.str());
       }
 
       MPI_Barrier(comm);
@@ -492,7 +443,7 @@ int main(int argc, char* argv[]) {
       debug_log << io_manager->getLog();
       debug_log << "Dumping data took: " << clock_dump.getDuration() << " s.";
       debug_log << std::endl;
-      appendLog(logs, debug_log);
+      tools::appendLog(logs, debug_log);
     }
     compress_manager->close();
   }
@@ -501,7 +452,7 @@ int main(int argc, char* argv[]) {
   debug_log << std::endl;
   debug_log << "Total run time: " << clock_overall.getDuration() << " s.";
   debug_log << std::endl;
-  appendLog(logs, debug_log);
+  tools::appendLog(logs, debug_log);
 
   // For humans
   if (rank == 0) {

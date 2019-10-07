@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(comm, &rank);
 
   // check input params
-  if (not tools::validParams(argc, argv, rank, nb_ranks)) {
+  if (not tools::valid(argc, argv, rank, nb_ranks)) {
     MPI_Finalize();
     return EXIT_FAILURE;
   }
@@ -109,7 +109,6 @@ int main(int argc, char* argv[]) {
     std::cout << "Look at the log for progress update ... " << std::endl;
   }
 
-  //
   // Create log and metrics files
   Timer clock_overall;
   #if !defined(NDEBUG)

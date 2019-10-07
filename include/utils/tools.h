@@ -43,7 +43,7 @@ namespace tools {
   bool createFolder(std::string const& folder);
   bool isPowerOfTwo(int n);
   std::string extractFileName(std::string const& input);
-  bool validParams(int argc, char* argv[], int rank=0, int nb_ranks=1);
+  bool valid(int argc, char **argv, int rank= 0, int nb_ranks= 1);
   void dump(std::string const& path, std::string const& content, std::string const& ext="");
   void append(std::string const& path, std::string const& content, std::string const& ext="");
   void append(std::string const& path, std::stringstream& content, std::string const& ext="");

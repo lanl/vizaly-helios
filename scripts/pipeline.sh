@@ -35,7 +35,7 @@ if ${COMPRESS_NON_HALOS}; then
   mpirun -np ${NRANKS} ./CBench ${INPUT_JSON} 
 fi
 
-# merge it with halo ones
+# combine it with halo ones
 if ${MERGE_DATASETS}; then
   source "/home/hoby/.bashrc" && cd ${BUILD} &&
   mpirun -np ${NRANKS} ./merger ${INPUT_JSON}

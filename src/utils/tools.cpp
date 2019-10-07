@@ -99,11 +99,13 @@ std::string extractFileName(std::string const &input) {
 }
 
 /* -------------------------------------------------------------------------- */
-bool validParams(int argc, char **argv, int rank, int nb_ranks) {
+bool valid(int argc, char **argv, int rank, int nb_ranks) {
 
   if (argc < 2) {
-    if (rank == 0)
-      std::cerr << "Usage: mpirun -n <int> program input.json" << std::endl;
+    if (rank == 0) {
+      std::cerr << "Usage: mpirun -n <int> ./program params.json";
+      std::cerr << std::endl;
+    }
     return false;
   }
 

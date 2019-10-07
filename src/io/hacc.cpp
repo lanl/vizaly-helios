@@ -33,19 +33,20 @@
 #include <sstream>
 #include <climits>
 #include "io/hacc.h"
+#include "utils/memory.h"
 /* -------------------------------------------------------------------------- */
 void HACCDataLoader::init(std::string in_file, MPI_Comm _comm) {
   filename = in_file;
   comm = _comm;
   do_dump = false;
 
-  MPI_Comm_size(comm, &numRanks);
-  MPI_Comm_rank(comm, &myRank);
+  MPI_Comm_size(comm, &nb_ranks);
+  MPI_Comm_rank(comm, &rank);
 }
 
 /* -------------------------------------------------------------------------- */
 bool HACCDataLoader::close() {
-  return deAllocateMem(gio::to_string(data_type), data);
+  return Memory::release(data, data_type);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -58,7 +59,7 @@ bool HACCDataLoader::saveParams(){
   gioReader.openAndReadHeader(gio::GenericIO::MismatchRedistribute);
   int numDataRanks = gioReader.readNRanks();
 
-  if (numRanks > numDataRanks) {
+  if (nb_ranks > numDataRanks) {
     std::cout << "Num data ranks: " << numDataRanks;
     std::cout << "Use <= MPI ranks than data ranks" << std::endl;
     return false;
@@ -66,8 +67,8 @@ bool HACCDataLoader::saveParams(){
 
   // get dimensions of the input file
   // and read in the scalars information
-  gioReader.readPhysOrigin(physOrigin);
-  gioReader.readPhysScale(physScale);
+  gioReader.readPhysOrigin(phys_orig);
+  gioReader.readPhysScale(phys_scale);
   gioReader.getVariableInfo(VI);
 
   int numVars = static_cast<int>(VI.size());
@@ -104,7 +105,7 @@ bool HACCDataLoader::load(std::string paramName) {
   gioReader.openAndReadHeader(gio::GenericIO::MismatchRedistribute);
   int numDataRanks = gioReader.readNRanks();
 
-  if (numRanks > numDataRanks) {
+  if (nb_ranks > numDataRanks) {
     std::cout << "Num data ranks: " << numDataRanks;
     std::cout << "Use <= MPI ranks than data ranks" << std::endl;
     return false;
@@ -144,11 +145,11 @@ bool HACCDataLoader::load(std::string paramName) {
 
   //
   // Split ranks among data
-  int numDataRanksPerMPIRank = numDataRanks / numRanks;
+  int numDataRanksPerMPIRank = numDataRanks / nb_ranks;
   int loadRange[2];
-  loadRange[0] = myRank * numDataRanksPerMPIRank;
-  loadRange[1] = (myRank + 1) * numDataRanksPerMPIRank;
-  if (myRank == numRanks - 1)
+  loadRange[0] = rank * numDataRanksPerMPIRank;
+  loadRange[1] = (rank + 1) * numDataRanksPerMPIRank;
+  if (rank == nb_ranks - 1)
     loadRange[1] = numDataRanks;
 
   int splitDims[3];
@@ -167,10 +168,10 @@ bool HACCDataLoader::load(std::string paramName) {
     maxNumElementsPerRank = std::max(maxNumElementsPerRank, local_nb_elems);
   }
 
-  allocateMem(gio::to_string(data_type), local_nb_elems, 0, data);
+  Memory::allocate(data, data_type, local_nb_elems, 0);
 
   readInData.setNumElements(maxNumElementsPerRank);
-  readInData.allocateMem(1);
+  readInData.allocate(1);
   size_per_dim[0] = local_nb_elems;	// For compression
 
   log << "totalNumberOfElements: " << total_nb_elems << std::endl;
@@ -193,8 +194,8 @@ bool HACCDataLoader::load(std::string paramName) {
 
     double cur[3], nxt[3];
     for (int j = 0; j < 3; ++j) {
-      cur[j] = float(coords[j]) / splitDims[j] * physScale[j] + physOrigin[j];
-      nxt[j] = float(coords[j] + 1) / splitDims[j] * physScale[j] + physOrigin[j];
+      cur[j] = float(coords[j]) / splitDims[j] * phys_scale[j] + phys_orig[j];
+      nxt[j] = float(coords[j] + 1) / splitDims[j] * phys_scale[j] + phys_orig[j];
     }
 
     log << "coordinates: (";
@@ -214,11 +215,12 @@ bool HACCDataLoader::load(std::string paramName) {
     switch (readInData.data_type) {
       case gio::Type::Float:  gioReader.addVariable(name, (float*)    raw, true); break;
       case gio::Type::Double: gioReader.addVariable(name, (double*)   raw, true); break;
-      case gio::Type::Int8:  gioReader.addVariable(name, (int8_t*)   raw, true); break;
+      case gio::Type::Int:    gioReader.addVariable(name, (int*)      raw, true); break;
+      case gio::Type::Int8:   gioReader.addVariable(name, (int8_t*)   raw, true); break;
       case gio::Type::Int16:  gioReader.addVariable(name, (int16_t*)  raw, true); break;
       case gio::Type::Int32:  gioReader.addVariable(name, (int32_t*)  raw, true); break;
       case gio::Type::Int64:  gioReader.addVariable(name, (int64_t*)  raw, true); break;
-      case gio::Type::Uint8: gioReader.addVariable(name, (uint8_t*)  raw, true); break;
+      case gio::Type::Uint8:  gioReader.addVariable(name, (uint8_t*)  raw, true); break;
       case gio::Type::Uint16: gioReader.addVariable(name, (uint16_t*) raw, true); break;
       case gio::Type::Uint32: gioReader.addVariable(name, (uint32_t*) raw, true); break;
       case gio::Type::Uint64: gioReader.addVariable(name, (uint64_t*) raw, true); break;
@@ -232,11 +234,12 @@ bool HACCDataLoader::load(std::string paramName) {
     switch (readInData.data_type) {
       case gio::Type::Float:  std::memcpy(&((float*)   data)[offset], raw, bytes); break;
       case gio::Type::Double: std::memcpy(&((double*)  data)[offset], raw, bytes); break;
-      case gio::Type::Int8:  std::memcpy(&((int8_t*)  data)[offset], raw, bytes); break;
+      case gio::Type::Int:    std::memcpy(&((int*)     data)[offset], raw, bytes); break;
+      case gio::Type::Int8:   std::memcpy(&((int8_t*)  data)[offset], raw, bytes); break;
       case gio::Type::Int16:  std::memcpy(&((int16_t*) data)[offset], raw, bytes); break;
       case gio::Type::Int32:  std::memcpy(&((int32_t*) data)[offset], raw, bytes); break;
       case gio::Type::Int64:  std::memcpy(&((int64_t*) data)[offset], raw, bytes); break;
-      case gio::Type::Uint8: std::memcpy(&((uint8_t*) data)[offset], raw, bytes); break;
+      case gio::Type::Uint8:  std::memcpy(&((uint8_t*) data)[offset], raw, bytes); break;
       case gio::Type::Uint16: std::memcpy(&((uint16_t*)data)[offset], raw, bytes); break;
       case gio::Type::Uint32: std::memcpy(&((uint32_t*)data)[offset], raw, bytes); break;
       case gio::Type::Uint64: std::memcpy(&((uint64_t*)data)[offset], raw, bytes); break;
@@ -253,56 +256,57 @@ bool HACCDataLoader::load(std::string paramName) {
     int y_range = max[1] - min[1];
     int z_range = max[2] - min[2];
 
-    mpiCartPartitions[0] = static_cast<int>(physScale[0] / x_range);
-    mpiCartPartitions[1] = static_cast<int>(physScale[1] / y_range);
-    mpiCartPartitions[2] = static_cast<int>(physScale[2] / z_range);
+    mpi_partition[0] = static_cast<int>(phys_scale[0] / x_range);
+    mpi_partition[1] = static_cast<int>(phys_scale[1] / y_range);
+    mpi_partition[2] = static_cast<int>(phys_scale[2] / z_range);
 
     log << "mpiCartPartitions: ";
-    log << mpiCartPartitions[0] << ", "
-        << mpiCartPartitions[1] << ", "
-        << mpiCartPartitions[2] << std::endl;
+    log << mpi_partition[0] << ", "
+        << mpi_partition[1] << ", "
+        << mpi_partition[2] << std::endl;
   }
 
-  readInData.deAllocateMem();
+  readInData.release();
   return true;
 }
 
 /* -------------------------------------------------------------------------- */
-void HACCDataLoader::save(std::string paramName, void* raw) {
+void HACCDataLoader::save(std::string in_param, void* raw) {
 
   for (auto&& scalar : scalar_data) {
-    if (scalar.name == paramName) {
+    if (scalar.name == in_param) {
       scalar.do_write = true;
       scalar.setNumElements(local_nb_elems);
-      scalar.allocateMem();
+      scalar.allocate();
       std::memcpy(scalar.data, raw, scalar.size * local_nb_elems);
 
       log.str("");
-      log << "\nHACCDataLoader::saveCompData" << std::endl;
-      log << paramName << " found. It has " << scalar.nb_elems << " elements";
+      log << std::endl;
+      log << "HACCDataLoader::save" << std::endl;
+      log << in_param << " found. It has " << scalar.nb_elems << " elements";
       log << " of size " << scalar.size << std::endl;
     }
   }
 }
 
 /* -------------------------------------------------------------------------- */
-void HACCDataLoader::dump(std::string _filename) {
+void HACCDataLoader::dump(std::string in_file) {
 
   Timer clock;
   log.str("");
 
   // Create setup
   int periods[3] = { 0, 0, 0 };
-  MPI_Cart_create(comm, 3, mpiCartPartitions, periods, 0, &comm);
+  MPI_Cart_create(comm, 3, mpi_partition, periods, 0, &comm);
 
   // Init GenericIO writer + open file
-  gio::GenericIO gioWriter(comm, _filename);
+  gio::GenericIO gioWriter(comm, in_file);
   gioWriter.setNumElems(local_nb_elems);
 
   // Init physical parameters
   for (int d = 0; d < 3; ++d) {
-    gioWriter.setPhysOrigin(physOrigin[d], d);
-    gioWriter.setPhysScale(physScale[d], d);
+    gioWriter.setPhysOrigin(phys_orig[d], d);
+    gioWriter.setPhysScale(phys_scale[d], d);
   }
 
   MPI_Barrier(comm);
@@ -321,11 +325,12 @@ void HACCDataLoader::dump(std::string _filename) {
     switch (scalar.data_type) {
       case gio::Type::Float:  gioWriter.addVariable(name, (float*)    raw, flag); break;
       case gio::Type::Double: gioWriter.addVariable(name, (double*)   raw, flag); break;
-      case gio::Type::Int8:  gioWriter.addVariable(name, (int8_t*)   raw, flag); break;
+      case gio::Type::Int:    gioWriter.addVariable(name, (int*)      raw, flag); break;
+      case gio::Type::Int8:   gioWriter.addVariable(name, (int8_t*)   raw, flag); break;
       case gio::Type::Int16:  gioWriter.addVariable(name, (int16_t*)  raw, flag); break;
       case gio::Type::Int32:  gioWriter.addVariable(name, (int32_t*)  raw, flag); break;
       case gio::Type::Int64:  gioWriter.addVariable(name, (int64_t*)  raw, flag); break;
-      case gio::Type::Uint8: gioWriter.addVariable(name, (uint8_t*)  raw, flag); break;
+      case gio::Type::Uint8:  gioWriter.addVariable(name, (uint8_t*)  raw, flag); break;
       case gio::Type::Uint16: gioWriter.addVariable(name, (uint16_t*) raw, flag); break;
       case gio::Type::Uint32: gioWriter.addVariable(name, (uint32_t*) raw, flag); break;
       case gio::Type::Uint64: gioWriter.addVariable(name, (uint64_t*) raw, flag); break;
@@ -335,7 +340,7 @@ void HACCDataLoader::dump(std::string _filename) {
 
   gioWriter.write();
 
-  log << "HACCDataLoader::writeData " << _filename << std::endl;
+  log << "HACCDataLoader::dump " << in_file << std::endl;
   MPI_Barrier(comm);
   clock.stop();
 

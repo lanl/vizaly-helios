@@ -35,7 +35,7 @@
 /* -------------------------------------------------------------------------- */
 namespace gio {
   enum class Type {
-    Float, Double, Int8, Int16, Int32, Int64, Uint8, Uint16, Uint32, Uint64
+    Float, Double, Int, Int8, Int16, Int32, Int64, Uint8, Uint16, Uint32, Uint64
   };
 
   std::string to_string(Type data_type);
@@ -55,8 +55,8 @@ public:
 
   void setNumElements(size_t in_nb_elems) { nb_elems = in_nb_elems; }
   bool determineDataType();
-  bool allocateMem(int offset = 1);
-  bool deAllocateMem();
+  bool allocate(int offset = 1);
+  bool release();
 
 public:
   int id = 0;

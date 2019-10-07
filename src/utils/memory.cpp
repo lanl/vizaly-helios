@@ -52,7 +52,7 @@ void Memory::start() {
 
 /* -------------------------------------------------------------------------- */
 void Memory::stop() {
-  unsigned long after_size, after_rss;
+  size_t after_size, after_rss;
   getMemorySize(after_size, after_rss);
 
   usage_size = after_size - before_size;
@@ -60,104 +60,73 @@ void Memory::stop() {
 }
 
 /* -------------------------------------------------------------------------- */
-// TODO: use gio::TYPE
-bool Memory::allocate(void *&data, std::string type, size_t nb_elems, int offset) {
-  if (type == "int")
-    data = new int[nb_elems + offset];
-  else if (type == "float")
-    data = new float[nb_elems + offset];
-  else if (type == "double")
-    data = new double[nb_elems + offset];
-  else if (type == "int8_t")
-    data = new int8_t[nb_elems + offset];
-  else if (type == "int16_t")
-    data = new int16_t[nb_elems + offset];
-  else if (type == "int32_t")
-    data = new int32_t[nb_elems + offset];
-  else if (type == "int64_t")
-    data = new int64_t[nb_elems + offset];
-  else if (type == "uint8_t")
-    data = new uint8_t[nb_elems + offset];
-  else if (type == "uint16_t")
-    data = new uint16_t[nb_elems + offset];
-  else if (type == "uint32_t")
-    data = new uint32_t[nb_elems + offset];
-  else if (type == "uint64_t")
-    data = new uint64_t[nb_elems + offset];
-  else
-    return false;
+bool Memory::allocate(void *&data, gio::Type data_type, size_t nb_elems, int offset) {
 
+  switch (data_type) {
+    case gio::Type::Float:  data = new float   [nb_elems + offset]; break;
+    case gio::Type::Double: data = new double  [nb_elems + offset]; break;
+    case gio::Type::Int:    data = new int     [nb_elems + offset]; break;
+    case gio::Type::Int8:   data = new int8_t  [nb_elems + offset]; break;
+    case gio::Type::Int16:  data = new int16_t [nb_elems + offset]; break;
+    case gio::Type::Int32:  data = new int32_t [nb_elems + offset]; break;
+    case gio::Type::Int64:  data = new int64_t [nb_elems + offset]; break;
+    case gio::Type::Uint8:  data = new uint8_t [nb_elems + offset]; break;
+    case gio::Type::Uint16: data = new uint16_t[nb_elems + offset]; break;
+    case gio::Type::Uint32: data = new uint32_t[nb_elems + offset]; break;
+    case gio::Type::Uint64: data = new uint64_t[nb_elems + offset]; break;
+    default: return false;
+  }
   return true;
 }
 
 /* -------------------------------------------------------------------------- */
-bool Memory::release(void *&data, std::string type) {
+bool Memory::release(void *&data, gio::Type data_type) {
+  if (data != nullptr) {
+    switch (data_type) {
+      case gio::Type::Float:  delete[] (float*)    data; break;
+      case gio::Type::Double: delete[] (double*)   data; break;
+      case gio::Type::Int:    delete[] (int*)      data; break;
+      case gio::Type::Int8:   delete[] (int8_t*)   data; break;
+      case gio::Type::Int16:  delete[] (int16_t*)  data; break;
+      case gio::Type::Int32:  delete[] (int32_t*)  data; break;
+      case gio::Type::Int64:  delete[] (int64_t*)  data; break;
+      case gio::Type::Uint8:  delete[] (uint8_t*)  data; break;
+      case gio::Type::Uint16: delete[] (uint16_t*) data; break;
+      case gio::Type::Uint32: delete[] (uint32_t*) data; break;
+      case gio::Type::Uint64: delete[] (uint64_t*) data; break;
+      default: return false;
+    }
+    data = nullptr;
+  }
 
-  if (data == nullptr) // already deallocated!
-    return true;
-
-  if (type == "int")
-    delete[](int *) data;
-  else if (type == "float")
-    delete[](float *) data;
-  else if (type == "double")
-    delete[](double *) data;
-  else if (type == "int8_t")
-    delete[](int8_t *) data;
-  else if (type == "int16_t")
-    delete[](int16_t *) data;
-  else if (type == "int32_t")
-    delete[](int32_t *) data;
-  else if (type == "int64_t")
-    delete[](int64_t *) data;
-  else if (type == "uint8_t")
-    delete[](uint8_t *) data;
-  else if (type == "uint16_t")
-    delete[](uint16_t *) data;
-  else if (type == "uint32_t")
-    delete[](uint32_t *) data;
-  else if (type == "uint64_t")
-    delete[](uint64_t *) data;
-  else
-    return false;
-
-  data = nullptr;
   return true;
 }
 
 /* -------------------------------------------------------------------------- */
 double Memory::getMemoryInUseInB() {
-  unsigned long after_size, after_rss;
+  size_t after_size, after_rss;
   getMemorySize(after_size, after_rss);
 
-  return (after_size - before_size);
+  return static_cast<double>(after_size - before_size);
 }
 
 /* -------------------------------------------------------------------------- */
 double Memory::getMemoryInUseInKB() {
-  unsigned long after_size, after_rss;
-  getMemorySize(after_size, after_rss);
-
-  return (after_size - before_size) / (1024.0);
+  return getMemoryInUseInB() / kilobyte;
 }
 
 /* -------------------------------------------------------------------------- */
 double Memory::getMemoryInUseInMB() {
-  unsigned long after_size, after_rss;
-  getMemorySize(after_size, after_rss);
-
-  return (after_size - before_size) / (1024.0 * 1024.0);
+  return getMemoryInUseInB() / megabyte;
 }
 
 /* -------------------------------------------------------------------------- */
-#if defined(__unix__) || defined(__unix) || defined(unix)
-// From VisIt avt/Pipeline/Pipeline/avtMemory.cpp
-void Memory::getMemorySize(unsigned long &size, unsigned long &rss)
-{
+void Memory::getMemorySize(size_t& size, size_t& rss) {
+#if defined(__linux__)
   size = 0;
   rss  = 0;
 
-  FILE *file = fopen("/proc/self/statm", "r");
+  FILE* file = fopen("/proc/self/statm", "r");
   if (file == NULL)
     return;
 
@@ -166,34 +135,38 @@ void Memory::getMemorySize(unsigned long &size, unsigned long &rss)
     fclose(file);
     return;
   }
-  size *= (unsigned long) getpagesize();
-  rss  *= (unsigned long) getpagesize();
-  fclose(file);
-}
-#elif defined(WIN32)
-void Memory::getMemorySize(unsigned long &size, unsigned long &rss)
-{
-  //Virtual Memory by current process
-  PROCESS_MEMORY_COUNTERS_EX pmc;
-  GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
-  SIZE_T virtualMemUsedByMe = pmc.PrivateUsage;
 
-  //Physical Memory Used by Current Process
-  SIZE_T physMemUsedByMe = pmc.WorkingSetSize;
+  size_t const page_size = getpagesize();
+
+  size *= page_size;
+  rss  *= page_size;
+  fclose(file);
+
+#elif defined(WIN32)
+  // virtual and physical memory by current process
+  _PROCESS_MEMORY_COUNTERS_EX pmc;
+  GetProcessMemoryInfo(
+    GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)
+  );
+
+  size_t virtualMemUsedByMe = pmc.PrivateUsage;
+  size_t physMemUsedByMe = pmc.WorkingSetSize;
 
   size = virtualMemUsedByMe;
   rss = physMemUsedByMe;
-}
+
 #elif defined(__APPLE__) && defined(__MACH__)
-void Memory::getMemorySize(unsigned long &size, unsigned long &rss)
-{
-  struct mach_task_basic_info info;
+  struct mach_task_basic_info info {};
   mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
-  if ( task_info( mach_task_self( ), MACH_TASK_BASIC_INFO,
-                  (task_info_t)&info, &infoCount ) != KERN_SUCCESS )
+  auto const status = task_info(
+    mach_task_self(), MACH_TASK_BASIC_INFO,
+    (task_info_t)&info, &infoCount
+  );
+
+  if (status != KERN_SUCCESS)
     rss = (size_t)0L;		/* Can't access? */
 
   rss = (size_t) info.resident_size;
   size = (size_t) info.virtual_size;
-}
 #endif
+}

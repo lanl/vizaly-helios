@@ -43,25 +43,25 @@ class HACCDataLoader : public DataLoaderInterface {
 
 public:
   // For output
-  double physOrigin[3]{0, 0, 0};
-  double physScale[3]{0, 0, 0};
-  int mpiCartPartitions[3]{0, 0, 0};
+  double phys_orig[3]{0, 0, 0};
+  double phys_scale[3]{0, 0, 0};
+  int mpi_partition[3]{0, 0, 0};
 
   HACCDataLoader() {
     loader = "HACC";
     scalar_data.clear();
   }
 
-  ~HACCDataLoader() { deAllocateMem(gio::to_string(data_type), data); }
+  ~HACCDataLoader() { close(); }
 
   void init(std::string in_file, MPI_Comm _comm) override;
   bool saveParams() override;
   bool load(std::string paramName) override;
-  void save(std::string paramName, void *raw) override;
-  void dump(std::string _filename) override;
+  void save(std::string in_param, void *raw) override;
+  void dump(std::string in_file) override;
   bool close() override;
 
 protected:
-  int numRanks = 0;
-  int myRank = 0;
+  int nb_ranks = 0;
+  int rank = 0;
 };

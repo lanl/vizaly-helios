@@ -102,15 +102,15 @@ size_t Merger::cache(long offset) {
   }
 
   if (my_rank == 0 and save) {
-    std::cout << "mpiCartPartitions: " << ioMgr->mpiCartPartitions[0] << ", "
-              << ioMgr->mpiCartPartitions[1] << ", "
-              << ioMgr->mpiCartPartitions[2] << std::endl;
-    std::cout << "physOrig: " << ioMgr->physOrigin[0] << ", "
-              << ioMgr->physOrigin[1] << ", "
-              << ioMgr->physOrigin[2] << std::endl;
-    std::cout << "physScale: " << ioMgr->physScale[0] << ", "
-              << ioMgr->physScale[1] << ", "
-              << ioMgr->physScale[2] << std::endl;
+    std::cout << "mpiCartPartitions: " << ioMgr->mpi_partition[0] << ", "
+              << ioMgr->mpi_partition[1] << ", "
+              << ioMgr->mpi_partition[2] << std::endl;
+    std::cout << "physOrig: " << ioMgr->phys_orig[0] << ", "
+              << ioMgr->phys_orig[1] << ", "
+              << ioMgr->phys_orig[2] << std::endl;
+    std::cout << "physScale: " << ioMgr->phys_scale[0] << ", "
+              << ioMgr->phys_scale[1] << ", "
+              << ioMgr->phys_scale[2] << std::endl;
   }
 
   debug_log << " done." << std::endl;
@@ -130,7 +130,7 @@ void Merger::dump() {
   assert(local_parts > 0);
 
   int periods[3] = {0,0,0};
-  auto dim_size = ioMgr->mpiCartPartitions;
+  auto dim_size = ioMgr->mpi_partition;
   MPI_Cart_create(comm, 3, dim_size, periods, 0, &comm);
 
   // init writer and open file
@@ -139,8 +139,8 @@ void Merger::dump() {
 
   // init physical params
   for (int d=0; d < 3; ++d) {
-    gioWriter.setPhysOrigin(ioMgr->physOrigin[d], d);
-    gioWriter.setPhysScale(ioMgr->physScale[d], d);
+    gioWriter.setPhysOrigin(ioMgr->phys_orig[d], d);
+    gioWriter.setPhysScale(ioMgr->phys_scale[d], d);
   }
 
   MPI_Barrier(comm);

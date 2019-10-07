@@ -446,7 +446,7 @@ void Analyzer::dumpNonHalosData() {
   debug_log << "Dumping non halos data into '"<< output_non_halos <<"' ... ";
 
   int periods[3] = {0,0,0};
-  auto dim_size = ioMgr->mpiCartPartitions;
+  auto dim_size = ioMgr->mpi_partition;
   MPI_Cart_create(comm, 3, dim_size, periods, 0, &comm);
 
   // init writer and open file
@@ -455,8 +455,8 @@ void Analyzer::dumpNonHalosData() {
 
   // init physical params
   for (int d=0; d < 3; ++d) {
-    gioWriter.setPhysOrigin(ioMgr->physOrigin[d], d);
-    gioWriter.setPhysScale(ioMgr->physScale[d], d);
+    gioWriter.setPhysOrigin(ioMgr->phys_orig[d], d);
+    gioWriter.setPhysScale(ioMgr->phys_scale[d], d);
   }
 
   MPI_Barrier(comm);

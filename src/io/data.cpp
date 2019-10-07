@@ -31,6 +31,7 @@
 
 #include "io/data.h"
 #include <cassert>
+#include "utils/memory.h"
 /* -------------------------------------------------------------------------- */
 namespace gio {
 
@@ -99,47 +100,15 @@ bool Data::determineDataType() {
 }
 
 /* -------------------------------------------------------------------------- */
-bool Data::allocateMem(int offset) {
-  assert(offset >= 0);
+bool Data::allocate(int offset) {
+  assert(offset > 0);
   determineDataType();
-
-  switch (data_type) {
-    case Type::Float:  data = new float   [nb_elems + offset]; break;
-    case Type::Double: data = new double  [nb_elems + offset]; break;
-    case Type::Int8:   data = new int8_t  [nb_elems + offset]; break;
-    case Type::Int16:  data = new int16_t [nb_elems + offset]; break;
-    case Type::Int32:  data = new int32_t [nb_elems + offset]; break;
-    case Type::Int64:  data = new int64_t [nb_elems + offset]; break;
-    case Type::Uint8:  data = new uint8_t [nb_elems + offset]; break;
-    case Type::Uint16: data = new uint16_t[nb_elems + offset]; break;
-    case Type::Uint32: data = new uint32_t[nb_elems + offset]; break;
-    case Type::Uint64: data = new uint64_t[nb_elems + offset]; break;
-    default: return false;
-  }
-
-  return true;
+  return Memory::allocate(data, data_type, nb_elems, offset);
 }
 
 /* -------------------------------------------------------------------------- */
-bool Data::deAllocateMem() {
-  if (data != nullptr) {
-    switch (data_type) {
-      case Type::Float:  delete[] (float*)    data; break;
-      case Type::Double: delete[] (double*)   data; break;
-      case Type::Int8:   delete[] (int8_t*)   data; break;
-      case Type::Int16:  delete[] (int16_t*)  data; break;
-      case Type::Int32:  delete[] (int32_t*)  data; break;
-      case Type::Int64:  delete[] (int64_t*)  data; break;
-      case Type::Uint8:  delete[] (uint8_t*)  data; break;
-      case Type::Uint16: delete[] (uint16_t*) data; break;
-      case Type::Uint32: delete[] (uint32_t*) data; break;
-      case Type::Uint64: delete[] (uint64_t*) data; break;
-      default: return false;
-    }
-    data = nullptr;
-  }
-
-  return true;
+bool Data::release() {
+  return Memory::release(data, data_type);
 }
 /* -------------------------------------------------------------------------- */
 } // namespace gio

@@ -34,17 +34,19 @@
 /* -------------------------------------------------------------------------- */
 #if defined(__APPLE__) && defined(__MACH__)
   #include <mach/mach.h>
-#elif defined(__unix__) || defined(__unix) || defined(unix)
+#elif defined(__linux__)
   #include <sys/sysinfo.h>
   #include <unistd.h>
-#elif defined(WIN32)
+#elif defined(_WIN32)
   #include <windows.h>
   #include "psapi.h" //MSVC Performance query
 #endif
 /* -------------------------------------------------------------------------- */
-#include <stdio.h>
+#include <cstdio>
+#include <cmath>
 #include <iostream>
 #include <map>
+#include "io/data.h"
 /* -------------------------------------------------------------------------- */
 class Memory {
 
@@ -55,29 +57,31 @@ public:
   void start();
   void stop();
 
-  unsigned long getMemorySizeInB() { return usage_size; }
-  double getMemorySizeInKB() { return usage_size / 1024.0; }
-  double getMemorySizeInMB() { return usage_size / (1024.0 * 1024.0); }
+  double getMemorySizeInB() { return usage_size; }
+  double getMemorySizeInKB() { return usage_size / kilobyte; }
+  double getMemorySizeInMB() { return usage_size / megabyte; }
   double getMemoryInUseInB();
   double getMemoryInUseInKB();
   double getMemoryInUseInMB();
 
-
-  unsigned long getMemoryRSSInB() { return usage_rss; }
-  double getMemoryRSSInKB() { return usage_rss / 1024.0; }
-  double getMemoryRSSInMB() { return usage_rss / (1024.0 * 1024.0); }
+  double getMemoryRSSInB() { return static_cast<double>(usage_rss); }
+  double getMemoryRSSInKB() { return static_cast<double>(usage_rss) / kilobyte; }
+  double getMemoryRSSInMB() { return static_cast<double>(usage_rss) / megabyte; }
 
   // static data and methods
   static std::map<std::string, size_t> sizeOf;
-  static bool allocate(void *&data, std::string type, size_t nb_elems=1, int offset=0);
-  static bool release(void *&data, std::string type);
+  static bool allocate(void *&data, gio::Type data_type, size_t nb_elems=1, int offset=0);
+  static bool release(void *&data, gio::Type data_type);
 
 private:
-  void getMemorySize(unsigned long &size, unsigned long &rss);
+  static void getMemorySize(size_t& size, size_t& rss);
 
-  unsigned long before_size = 0;
-  unsigned long usage_size = 0;  // program size
-  unsigned long before_rss = 0;
-  unsigned long usage_rss = 0;  // resident set size
+  size_t before_size = 0;
+  size_t usage_size  = 0;  // program size
+  size_t before_rss  = 0;
+  size_t usage_rss   = 0;  // resident set size
+
+  double const kilobyte = 1024.;
+  double const megabyte = kilobyte * kilobyte;
 };
 /* -------------------------------------------------------------------------- */

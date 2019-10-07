@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
     // insert datainfo into io parameter list
     for (auto it = info.begin(); it != info.end(); ++it) {
       std::string value = it.value();
-      io_manager->loaderParams[it.key()] = value;
+      io_manager->loader_params[it.key()] = value;
     }
   }
 
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
   io_manager->setSave(dump);
 
   if (dump)
-    io_manager->saveInputFileParameters();
+    io_manager->saveParams();
 
   // Cycle through compressors and parameters
   for (int c = 0; c < compressors.size(); ++c) {
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
       memory_manager.start();
 
       // Check if parameter is valid before proceding
-      if (not io_manager->loadData(scalar)) {
+      if (not io_manager->load(scalar)) {
         memory_manager.stop();
         continue;
       }
@@ -415,7 +415,7 @@ int main(int argc, char* argv[]) {
       if (dump) {
         debug_log << "writing: " << scalar << std::endl;
 
-        io_manager->saveCompData(scalar, raw_decomp);
+        io_manager->save(scalar, raw_decomp);
         debug_log << io_manager->getLog();
       }
 
@@ -471,10 +471,10 @@ int main(int argc, char* argv[]) {
       debug_log << "Dumping data ... " << std::endl;
 
       // Pass data that was not compressed
-      for (auto&& param : io_manager->inOutData) {
-        if (not param.doWrite) {
-          io_manager->loadData(param.name);
-          io_manager->saveCompData(param.name, io_manager->data);
+      for (auto&& param : io_manager->scalar_data) {
+        if (not param.do_write) {
+          io_manager->load(param.name);
+          io_manager->save(param.name, io_manager->data);
           io_manager->close();
         }
       }
@@ -486,7 +486,7 @@ int main(int argc, char* argv[]) {
         : std::string(temp + "__" + output_path)
       );
 
-      io_manager->writeData(output_decompressed);
+      io_manager->dump(output_decompressed);
       clock_dump.stop();
 
       debug_log << io_manager->getLog();

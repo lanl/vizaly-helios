@@ -80,12 +80,12 @@ size_t Merger::cache(long offset) {
   if (save) {
     // set 'physOrigin' and 'physScale'
     // and update MPI cart partition while loading file.
-    ioMgr->saveInputFileParameters();
+    ioMgr->saveParams();
     ioMgr->setSave(true);
   }
 
   for (int i=0; i < num_scalars; ++i) {
-    if (ioMgr->loadData(scalars[i])) {
+    if (ioMgr->load(scalars[i])) {
       auto const n = ioMgr->getNumElements();
       auto const data = static_cast<float*>(ioMgr->data);
       dataset[i].resize(n + offset);
@@ -94,7 +94,7 @@ size_t Merger::cache(long offset) {
     MPI_Barrier(comm);
   }
 
-  if (ioMgr->loadData("id")) {
+  if (ioMgr->load("id")) {
     auto const n = ioMgr->getNumElements();
     auto const data = static_cast<long*>(ioMgr->data);
     index.resize(n + offset);

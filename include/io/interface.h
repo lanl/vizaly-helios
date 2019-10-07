@@ -32,71 +32,65 @@
 #pragma once
 /* -------------------------------------------------------------------------- */
 #include <string>
-#include <mpi.h>
 #include <sstream>
 #include <unordered_map>
-/* -------------------------------------------------------------------------- */
+#include <mpi.h>
 #include "data.h"
 #include "utils/json.h"
 /* -------------------------------------------------------------------------- */
 class DataLoaderInterface {
 
 public:
-	virtual void init(std::string _filename, MPI_Comm _comm) = 0;
-	virtual bool loadData(std::string paramName) = 0;
-	virtual void saveCompData(std::string paramName, void* raw) = 0;
-	virtual void writeData(std::string _filename) = 0;
-	virtual bool saveInputFileParameters() = 0;
+	virtual void init(std::string in_file, MPI_Comm _comm) = 0;
+	virtual bool load(std::string in_param) = 0;
+	virtual void save(std::string in_param, void* raw) = 0;
+	virtual void dump(std::string in_file) = 0;
+	virtual bool saveParams() = 0;
 	virtual bool close() = 0;
-	virtual void setParam(std::string paramName, std::string type, std::string value) = 0;
-  virtual bool loadUncompressedFields(nlohmann::json const& jsonInput) = 0;
 
-  void setSave(bool state) { saveData = state; }
-	size_t getNumElements() { return numElements; }
-	size_t * getSizePerDim() { return sizePerDim; }
-	size_t getTypeSize() { return elemSize; }
-	std::string getType() { return gio::to_string(dataType); }
-	std::string getParam() { return param; }
-	std::string getLog() { return log.str(); }
+  void setSave(bool state) { do_dump = state; }
+	size_t getNumElements() const { return local_nb_elems; }
+	size_t* getSizePerDim() { return size_per_dim; }
+	size_t getTypeSize() const { return elem_size; }
+	std::string getType() const { return gio::to_string(data_type); }
+	std::string getParam() const { return param; }
+	std::string getLog() const { return log.str(); }
 
   std::string getDataInfo() {
     std::stringstream info;
     info << std::endl;
     info << "Loader type: " << loader << std::endl;
     info << "Filename: " << filename << std::endl;
-    info << "Total number of elements: " << totalNumberOfElements << std::endl;
+    info << "Total number of elements: " << total_nb_elems << std::endl;
     info << "Param: " << param << std::endl;
-    info << "dataType: " << gio::to_string(dataType) << std::endl;
-    info << "numElements: " << numElements << std::endl;
+    info << "dataType: " << gio::to_string(data_type) << std::endl;
+    info << "numElements: " << local_nb_elems << std::endl;
     info << "sizePerDim: "
-             << sizePerDim[0] << " " << sizePerDim[1] << " "
-             << sizePerDim[2] << " " << sizePerDim[3] << " "
-             << sizePerDim[4] << std::endl;
+         << size_per_dim[0] << " " << size_per_dim[1] << " "
+         << size_per_dim[2] << " " << size_per_dim[3] << " "
+         << size_per_dim[4] << std::endl;
 
     return info.str();
   }
 
 public:
 
-  bool saveData = false;
-  int origNumDims = 0;
+  bool do_dump = false;
+  void* data = nullptr;
   MPI_Comm comm = MPI_COMM_NULL;
 
   std::string loader = "";
   std::string filename = "";
   std::string param = "";
   std::stringstream log {};
-  gio::TYPE dataType = gio::TYPE::INT32;
+  gio::Type data_type = gio::Type::Int32;
 
-  size_t origDims[5] {0, 0, 0, 0, 0};
-  size_t sizePerDim[5] {0, 0, 0, 0, 0};	  // For compression
-  size_t rankOffset[3] {0, 0, 0};
-  size_t elemSize = 0;				            // size in bytes of that parameter
-  size_t totalNumberOfElements = 0;	      // total number of particles for input file
-  size_t numElements = 0;				          // number of particles for that mpi rank
+  size_t size_per_dim[5] {0, 0, 0, 0, 0};
+  size_t elem_size = 0;				                // size in bytes of that parameter
+  size_t total_nb_elems = 0;	                // total number of particles
+  size_t local_nb_elems = 0;			            // number of particles for that rank
 
-  void* data = nullptr;
-  std::unordered_map<std::string, std::string> loaderParams;
-  std::vector<gio::Data> inOutData;
+  std::unordered_map<std::string, std::string> loader_params;
+  std::vector<gio::Data> scalar_data;
 };
 /* -------------------------------------------------------------------------- */

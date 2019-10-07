@@ -37,27 +37,29 @@
 #include "io/GenericIO.h"
 #include "io/data.h"
 #include "io/interface.h"
+
 /* -------------------------------------------------------------------------- */
-class HACCDataLoader: public DataLoaderInterface {
+class HACCDataLoader : public DataLoaderInterface {
 
 public:
-	// For output
-	double physOrigin[3] {0, 0, 0};
-	double physScale[3] {0, 0, 0};
-	int mpiCartPartitions[3] {0, 0, 0};
+  // For output
+  double physOrigin[3]{0, 0, 0};
+  double physScale[3]{0, 0, 0};
+  int mpiCartPartitions[3]{0, 0, 0};
 
-	 HACCDataLoader() { loader = "HACC"; inOutData.clear(); }
-	~HACCDataLoader() { deAllocateMem(gio::to_string(dataType), data); }
+  HACCDataLoader() {
+    loader = "HACC";
+    scalar_data.clear();
+  }
 
-	void init(std::string _filename, MPI_Comm _comm) override;
-  bool saveInputFileParameters() override;
-  bool loadData(std::string paramName) override;
-	void saveCompData(std::string paramName, void* raw) override;
-	void writeData(std::string _filename) override;
+  ~HACCDataLoader() { deAllocateMem(gio::to_string(data_type), data); }
 
-  bool close() override { return deAllocateMem(gio::to_string(dataType), data); }
-	void setParam(std::string param, std::string type, std::string value) override {};
-  bool loadUncompressedFields(nlohmann::json const&) override { return false; }
+  void init(std::string in_file, MPI_Comm _comm) override;
+  bool saveParams() override;
+  bool load(std::string paramName) override;
+  void save(std::string paramName, void *raw) override;
+  void dump(std::string _filename) override;
+  bool close() override;
 
 protected:
   int numRanks = 0;

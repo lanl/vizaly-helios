@@ -34,15 +34,12 @@
 #include <string>
 /* -------------------------------------------------------------------------- */
 namespace gio {
-  enum class TYPE {
-    FLOAT, DOUBLE,
-    INT08, INT16, INT32, INT64,
-    UINT08, UINT16, UINT32, UINT64
+  enum class Type {
+    Float, Double, Int8, Int16, Int32, Int64, Uint8, Uint16, Uint32, Uint64
   };
 
-  std::string to_string(TYPE datatype);
-
-// Stores the genericIO data being read in
+  std::string to_string(Type data_type);
+/* -------------------------------------------------------------------------- */
 class Data {
 
 public:
@@ -50,13 +47,13 @@ public:
   ~Data() = default;
 
   void init(
-    int _id, std::string _name,
-    int _size, bool _isFloat, bool _isSigned,
-    bool _xVar, bool _yVar, bool _zVar,
-    void *_data = nullptr
+    int in_id, std::string const& in_name,
+    int in_size, bool in_is_float, bool in_is_signed,
+    bool in_x_var, bool in_y_var, bool in_z_var,
+    void* in_data = nullptr
   );
 
-  void setNumElements(size_t _numElements) { numElements = _numElements; }
+  void setNumElements(size_t in_nb_elems) { nb_elems = in_nb_elems; }
   bool determineDataType();
   bool allocateMem(int offset = 1);
   bool deAllocateMem();
@@ -64,19 +61,19 @@ public:
 public:
   int id = 0;
   int size = 0;           // in bytes
-  size_t numElements = 0;
+  size_t nb_elems = 0;
   std::string name = "";
-  TYPE dataType = TYPE::INT32;
+  Type data_type = Type::Int32;
 
-  bool isFloat  = false;
-  bool isSigned = false;
-  bool ghost    = false;
-  bool xVar     = false;
-  bool yVar     = false;
-  bool zVar     = false;
-  bool loadData = false;
-  bool doWrite  = false;
-
+  bool is_float  = false;
+  bool is_signed = false;
+  bool is_ghost  = false;
+  bool x_var     = false;
+  bool y_var     = false;
+  bool z_var     = false;
+  bool do_load   = false;
+  bool do_write  = false;
   void* data = nullptr;
 };
+/* -------------------------------------------------------------------------- */
 } // namespace gio

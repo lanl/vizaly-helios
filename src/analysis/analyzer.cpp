@@ -190,10 +190,10 @@ void Analyzer::filterParticles() {
 
   ioMgr->init(input_full, comm);
 
-  if (ioMgr->loadData("id")) {
+  if (ioMgr->load("id")) {
     debug_log << ioMgr->getDataInfo();
     // update particles count
-    total_parts = ioMgr->totalNumberOfElements;
+    total_parts = ioMgr->total_nb_elems;
     local_parts = ioMgr->getNumElements();
     auto data = static_cast<long*>(ioMgr->data);
     // keep track of particles ID to dataset index such that
@@ -219,10 +219,10 @@ void Analyzer::filterParticles() {
   // keep track of mismatch
   std::vector<long> redistribute;
 
-  if (ioMgr->loadData("id")) {
+  if (ioMgr->load("id")) {
     debug_log << ioMgr->getDataInfo();
     // update particles count
-    total_halos = ioMgr->totalNumberOfElements;
+    total_halos = ioMgr->total_nb_elems;
     local_halos = ioMgr->getNumElements();
     auto data = static_cast<long*>(ioMgr->data);
 
@@ -307,12 +307,12 @@ void Analyzer::filterParticles() {
 
   ioMgr->init(input_full, comm);
   ioMgr->setSave(true);
-  ioMgr->saveInputFileParameters();
+  ioMgr->saveParams();
 
   non_halos_id.reserve(local_non_halos);
   non_halos_mask.reserve(local_non_halos);
 
-  if (ioMgr->loadData("id")) {
+  if (ioMgr->load("id")) {
     auto* data = static_cast<long*>(ioMgr->data);
     for (auto i=0; i < local_parts; ++i) {
       if (not is_halo[i]) {
@@ -418,7 +418,7 @@ void Analyzer::extractNonHalos(int i) {
 
   ioMgr->filename = input_full;
 
-  if (ioMgr->loadData(scalars[i])) {
+  if (ioMgr->load(scalars[i])) {
     size_t const n = ioMgr->getNumElements();
     assert(n == local_parts);
     non_halos[i].reserve(n);
@@ -617,7 +617,7 @@ bool Analyzer::run() {
       auto const& scalar = scalars[i];
       debug_log << "\nLoading and running " << scalar << std::endl;
       // load current data
-      if (ioMgr->loadData(scalar)) {
+      if (ioMgr->load(scalar)) {
         // save infos for debug
         debug_log << ioMgr->getDataInfo();
         debug_log << ioMgr->getLog();

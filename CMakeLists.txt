@@ -53,15 +53,15 @@ endif ()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # main executables
-add_executable(cbench)
-add_executable(merger)
-add_executable(helios)
+add_executable(compress)
+add_executable(analysis)
+add_executable(combine)
 
-target_include_directories(cbench PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(merger PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(helios PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(compress PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(analysis PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(combine  PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-target_sources(cbench PRIVATE
+target_sources(compress PRIVATE
 		src/utils/tools.cpp
 		src/utils/memory.cpp
 		src/io/data.cpp
@@ -78,7 +78,7 @@ target_sources(cbench PRIVATE
 		src/compressors/metrics/min_max.cpp
 		src/compressors/run.cpp)
 
-target_sources(helios PRIVATE
+target_sources(analysis PRIVATE
 		src/utils/tools.cpp
 		src/utils/memory.cpp
 		src/io/data.cpp
@@ -86,13 +86,13 @@ target_sources(helios PRIVATE
 		src/analysis/analyzer.cpp
 		src/analysis/run.cpp)
 
-target_sources(merger PRIVATE
+target_sources(combine PRIVATE
 		src/utils/tools.cpp
 		src/utils/memory.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp
-		src/merge/merge.cpp
-		src/merge/run.cpp)
+		src/combine/merge.cpp
+		src/combine/run.cpp)
 
 # hacc data io
 add_library(gio STATIC)
@@ -117,9 +117,9 @@ endif()
 # propagated to all target linked to gio
 target_link_libraries(gio PUBLIC MPI::MPI_CXX)
 target_link_libraries(gio PUBLIC OpenMP::OpenMP_CXX)
-target_link_libraries(cbench PRIVATE gio)
-target_link_libraries(helios PRIVATE gio)
-target_link_libraries(merger PRIVATE gio)
+target_link_libraries(compress PRIVATE gio)
+target_link_libraries(analysis PRIVATE gio)
+target_link_libraries(combine PRIVATE gio)
 
 # enable/disable compressors
 option(ENABLE_BLOSC   "Enable BLOSC"   OFF)
@@ -131,39 +131,39 @@ option(ENABLE_ZFP     "Enable ZFP"     OFF)
 # link to external compressors
 if (ENABLE_BLOSC)
 	find_package(blosc REQUIRED)
-	target_compile_definitions(cbench PRIVATE -DENABLE_BLOSC=1)
-	target_include_directories(cbench PRIVATE ${BLOSC_INCLUDE_DIRS})
-	target_link_libraries(cbench PRIVATE ${BLOSC_LIBRARIES})
+	target_compile_definitions(compress PRIVATE -DENABLE_BLOSC=1)
+	target_include_directories(compress PRIVATE ${BLOSC_INCLUDE_DIRS})
+	target_link_libraries(compress PRIVATE ${BLOSC_LIBRARIES})
 endif()
 
 if (ENABLE_FPZIP)
 	find_package(fpzip REQUIRED)
-	target_compile_definitions(cbench PRIVATE -DENABLE_FPZIP=1)
-	target_include_directories(cbench PRIVATE ${FPZIP_INCLUDE_DIRS})
-	target_link_libraries(cbench PRIVATE ${FPZIP_LIBRARIES})
+	target_compile_definitions(compress PRIVATE -DENABLE_FPZIP=1)
+	target_include_directories(compress PRIVATE ${FPZIP_INCLUDE_DIRS})
+	target_link_libraries(compress PRIVATE ${FPZIP_LIBRARIES})
 endif()
 
 if (ENABLE_ISABELA)
 	find_package(isabela REQUIRED)
-	target_compile_definitions(cbench PRIVATE -DENABLE_ISABELA=1)
-	target_include_directories(cbench PRIVATE ${ISABELA_INCLUDE_DIRS})
-	target_link_libraries(cbench PRIVATE ${ISABELA_LIBRARIES})
+	target_compile_definitions(compress PRIVATE -DENABLE_ISABELA=1)
+	target_include_directories(compress PRIVATE ${ISABELA_INCLUDE_DIRS})
+	target_link_libraries(compress PRIVATE ${ISABELA_LIBRARIES})
 endif()
 
 if (ENABLE_SZ)
 	find_package(sz REQUIRED)
-	target_compile_definitions(cbench PRIVATE -DENABLE_SZ=1)
-	target_include_directories(cbench PRIVATE ${SZ_INCLUDE_DIRS})
-	target_link_libraries(cbench PRIVATE ${SZ_LIBRARIES})
+	target_compile_definitions(compress PRIVATE -DENABLE_SZ=1)
+	target_include_directories(compress PRIVATE ${SZ_INCLUDE_DIRS})
+	target_link_libraries(compress PRIVATE ${SZ_LIBRARIES})
 endif()
 
 if (ENABLE_ZFP)
 	find_package(zfp REQUIRED)
-	target_compile_definitions(cbench PRIVATE -DENABLE_ZFP=1)
-	target_include_directories(cbench PRIVATE ${ZFP_INCLUDE_DIRS})
-	target_link_libraries(cbench PRIVATE ${ZFP_LIBRARIES})
+	target_compile_definitions(compress PRIVATE -DENABLE_ZFP=1)
+	target_include_directories(compress PRIVATE ${ZFP_INCLUDE_DIRS})
+	target_link_libraries(compress PRIVATE ${ZFP_LIBRARIES})
 endif()
 
 # install instructions
-install(TARGETS helios cbench merger gio DESTINATION .)
+install(TARGETS analysis compress combine gio DESTINATION .)
 

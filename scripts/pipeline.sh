@@ -21,7 +21,6 @@ INPUT_JSON="../inputs/hacc/analysis_pipeline_${SUFFIX}.json"
 POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
 PARTICLES_DATA="/projects/exasky_data/hoby/analysis/data-combined-zip-${SUFFIX}-0.95"
 OUTPUT_DATA="/projects/exasky_data/hoby/analysis/pk-combined-zip-${SUFFIX}-0.95.dat"
-STATUS=0
 
 # extract non-halos and compute entropy if required
 if ${EXTRACT_NON_HALOS}; then

@@ -30,12 +30,12 @@
 
 include(FindPackageHandleStandardArgs)
 
-find_path(SZ_INCLUDE_DIR sz.h HINTS $ENV{SZ_INSTALL_DIR}/sz/include)
+find_path(SZ_INCLUDE_DIR sz.h HINTS $ENV{SZ_INSTALL_DIR}/include)
 
 # find library and dependencies
-find_library(SZ_LIBRARY sz HINTS $ENV{SZ_INSTALL_DIR}/install/lib)
-find_library(ZLIB_LIBRARY zlib HINTS $ENV{SZ_INSTALL_DIR}/install/lib)
-find_library(ZSTD_LIBRARY zstd HINTS $ENV{SZ_INSTALL_DIR}/install/lib)
+find_library(SZ_LIBRARY sz HINTS $ENV{SZ_INSTALL_DIR}/lib)
+find_library(ZLIB_LIBRARY zlib HINTS $ENV{SZ_INSTALL_DIR}/lib)
+find_library(ZSTD_LIBRARY zstd HINTS $ENV{SZ_INSTALL_DIR}/lib)
 
 find_package_handle_standard_args(sz DEFAULT_MSG SZ_INCLUDE_DIR SZ_LIBRARY)
 find_package_handle_standard_args(zlib DEFAULT_MSG ZLIB_LIBRARY)

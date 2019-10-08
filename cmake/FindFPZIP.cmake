@@ -30,7 +30,7 @@
 
 include(FindPackageHandleStandardArgs)
 
-find_path(FPZIP_INCLUDE_DIR fpzip.h HINTS $ENV{FPZIP_INSTALL_DIR}/inc)
+find_path(FPZIP_INCLUDE_DIR fpzip.h HINTS $ENV{FPZIP_INSTALL_DIR}/include)
 find_library(FPZIP_LIBRARY fpzip HINTS $ENV{FPZIP_INSTALL_DIR}/lib)
 find_package_handle_standard_args(fpzip DEFAULT_MSG FPZIP_INCLUDE_DIR FPZIP_LIBRARY)
 

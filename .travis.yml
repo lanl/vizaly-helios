@@ -1,0 +1,41 @@
+dist: xenial
+
+os: linux
+language: cpp
+compiler: gcc
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - cmake
+    - g++-9
+    - openssl
+    - zlib1g-dev
+    - libgsl-dev
+    - libfftw3-dev
+    - libnetcdf-dev
+
+before_script:
+  - export CC=gcc-9 CXX=g++-9
+
+script:
+  - root=$(pwd)
+  - git clone https://github.com/hobywan/compressors.git
+  - cd compressors && depend=$(pwd)
+  - |
+    compressors=("blosc" "fpzip" "isabela" "sz" "zfp");
+    for current in "${compressors[@]}"; do
+      cd ${current} && mkdir build && cd build;
+      cmake -DCMAKE_INSTALL_PREFIX=../install ..;
+      make -j && make install && cd ${depend};
+    done
+  - export BLOSC_INSTALL_DIR="${depend}/blosc/install"
+  - export FPZIP_INSTALL_DIR="${depend}/fpzip/install"
+  - export ISABELA_INSTALL_DIR="${depend}/isabela/install"
+  - export SZ_INSTALL_DIR="${depend}/sz/install"
+  - export ZFP_INSTALL_DIR="${depend}/zfp/install"
+  - cd ${root} && mkdir build && cd build
+  - cmake -DENABLE_BLOSC=ON -DENABLE_FPZIP=ON -DENABLE_ISABELA=ON -DENABLE_SZ=ON -DENABLE_ZFP=ON ..
+  - make -j

@@ -12,6 +12,8 @@ addons:
     - cmake
     - g++-9
     - openssl
+    - openmpi-bin
+    - libopenmpi-dev
     - zlib1g-dev
     - libgsl-dev
     - libfftw3-dev

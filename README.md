@@ -1,7 +1,7 @@
 # vizaly-hélios
 
 
-###### Summary
+###### SUMMARY
 
 **hélios** is a research code for large cosmological dataset compression.  
 It relies on particle clouds categorization or filtering, and includes three tools:
@@ -11,7 +11,7 @@ It relies on particle clouds categorization or filtering, and includes three too
 - analysis: compute entropy, filter and extract non-halos and generate plot scripts.
 
 
-###### Usage 
+###### USAGE 
 
 [![Build Status](https://travis-ci.com/lanl/VizAly-Helios.svg?branch=master)](https://travis-ci.com/lanl/VizAly-Helios)
 
@@ -22,22 +22,22 @@ They require [gsl](https://www.gnu.org/software/gsl/), [zlib](https://zlib.net) 
 Their installation paths should then be saved within environment variables.  
 
 ```bash
-export FOO_INSTALL_DIR=/path/to/foo        # save compressor 'foo' installation path
-mkdir build && cd build                    # avoid in-source builds
-cmake -DENABLE_FOO=ON ..                   # enable all kernels you want
-make -j                                    # use multiple compilation jobs 
-mpirun -np [nranks] ./tool input.json      # tool=[compress|combine|analyzer]
+export SZ_INSTALL_DIR="/path/to/foo"           # save 'sz' compressor installation path
+mkdir build && cd build                        # avoid in-source builds
+cmake -DENABLE_SZ=ON ..                        # enable all kernels you want
+make -j                                        # use multiple compilation jobs 
+mpirun -np 4 ./tool params.json                # tool=[compress|combine|analyzer]
 ```
 
 Tools parameters are supplied through a JSON file.    
 
-###### Scope
+###### SCOPE
 
 **hélios** is part of the **vizaly** project.  
 
 ### License
 
-This is an open source software available under the BSD-3 license.  
+It is an open source software available under the BSD-3 license.  
 (c) 2019, Los Alamos National Laboratory. All rights reserved.  
 See the license file for more details.  
 

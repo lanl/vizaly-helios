@@ -41,4 +41,3 @@ script:
   - cd ${root} && mkdir build && cd build
   - cmake -DENABLE_BLOSC=ON -DENABLE_FPZIP=ON -DENABLE_ISABELA=ON -DENABLE_SZ=ON -DENABLE_ZFP=ON ..
   - make -j
-  - mpirun -np 4 ./compress ../tests/input.json

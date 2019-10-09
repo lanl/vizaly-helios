@@ -1,10 +1,7 @@
 # vizaly-hélios
 
-[![Build Status](https://travis-ci.com/lanl/VizAly-Helios.svg?branch=master)](https://travis-ci.com/lanl/VizAly-Helios)
 
-### Summary
-
-###### Purpose
+###### Summary
 
 **hélios** is a research code for large cosmological dataset compression.  
 It relies on particle clouds categorization or filtering, and includes three tools:
@@ -16,25 +13,25 @@ It relies on particle clouds categorization or filtering, and includes three too
 
 ###### Usage 
 
+[![Build Status](https://travis-ci.com/lanl/VizAly-Helios.svg?branch=master)](https://travis-ci.com/lanl/VizAly-Helios)
+
 **hélios** can be built on Linux or macOS using CMake.  
 It requires a C++17 compiler and MPI as well.  
 It relies on a set of compression kernels with can be built from [here](https://github.com/hobywan/compressors).  
-They require [gsl](https://www.gnu.org/software/gsl/), [zlib](https://zlib.net) and [fftw](http://www.fftw.org) libraries as well.  
-Related installation paths should then be saved within environment variables like `FOO_INSTALL_DIR`.  
-**hélios** can finally built as follow:
+They require [gsl](https://www.gnu.org/software/gsl/), [zlib](https://zlib.net) and [fftw](http://www.fftw.org) libraries.  
+Their installation paths should then be saved within environment variables.  
 
 ```bash
+export FOO_INSTALL_DIR=/path/to/foo        # save compressor 'foo' installation path
 mkdir build && cd build                    # avoid in-source builds
 cmake -DENABLE_FOO=ON ..                   # enable all kernels you want
 make -j                                    # use multiple compilation jobs 
+mpirun -np [nranks] ./tool input.json      # tool=[compress|combine|analyzer]
 ```
 
 Tools parameters are supplied through a JSON file.    
-They can be run like below: 
 
-```mpirun -np [nranks] ./foo input.json```
-
-###### Project scope
+###### Scope
 
 **hélios** is part of the **vizaly** project.  
 

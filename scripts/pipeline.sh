@@ -14,13 +14,13 @@ COMPUTE_POWER_SPECTRUM=false
 # parameters
 NRANKS=8
 TIMESTEP=499
-SUFFIX="sampled"
+SUFFIX=""
 HACC="/projects/exasky/HACC"
-BUILD="/projects/exasky/hoby-projects/cbench/build"
-INPUT_JSON="../inputs/hacc/analysis_pipeline_${SUFFIX}.json"
+BUILD="/projects/exasky/hoby-projects/helios/build"
+INPUT_JSON="../inputs/hacc/analysis_pipeline${SUFFIX}.json"
 POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
-PARTICLES_DATA="/projects/exasky_data/hoby/analysis/data-combined-zip-${SUFFIX}-0.95"
-OUTPUT_DATA="/projects/exasky_data/hoby/analysis/pk-combined-zip-${SUFFIX}-0.95.dat"
+PARTICLES_DATA="/projects/exasky_data/hoby/analysis/data-combined-zip${SUFFIX}.dat"
+OUTPUT_DATA="/projects/exasky_data/hoby/analysis/pk-combined-zip${SUFFIX}.dat"
 
 # extract non-halos and compute entropy if required
 if ${EXTRACT_NON_HALOS}; then

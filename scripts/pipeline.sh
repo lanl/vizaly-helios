@@ -42,6 +42,7 @@ fi
 
 # compute power spectrum eventually
 if ${COMPUTE_POWER_SPECTRUM}; then
+  # shellcheck disable=SC1090
   source "${HACC}.darwin_setup" && cd "${HACC}/run" &&
   mpirun ${POWER_SPECTRUM} inputs/indat.params -n ${PARTICLES_DATA} ${OUTPUT_DATA} ${TIMESTEP}
 fi

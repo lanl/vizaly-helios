@@ -49,7 +49,7 @@
   },
   "noising": {
     "type": "gaussian",
-    "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/analysis/Halos/b0168/STEP499/m000-499.haloparticles",
+    "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
     "output":"/projects/exasky_data/hoby/analysis/data-full-noised",
     "d_min": 0.0,
     "d_max": 1.0,

@@ -15,7 +15,7 @@ SUFFIX=""
 
 HACC="/projects/exasky/HACC"
 BUILD="/projects/exasky/hoby-projects/helios/build"
-INPUT_JSON="../inputs/hacc/analysis_pipeline${SUFFIX}.json"
+INPUT_JSON="../inputs/analysis_pipeline${SUFFIX}.json"
 POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
 PARTICLES_DATA="/projects/exasky_data/hoby/analysis/data-full-noised${SUFFIX}"
 OUTPUT_DATA="/projects/exasky_data/hoby/analysis/pk-noised${SUFFIX}.dat"

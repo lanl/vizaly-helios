@@ -50,7 +50,7 @@
   "noising": {
     "type": "gaussian",
     "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/analysis/Halos/b0168/STEP499/m000-499.haloparticles",
-    "output":"/projects/exasky_data/hoby/analysis/data-halo-noised",
+    "output":"/projects/exasky_data/hoby/analysis/data-full-noised",
     "d_min": 0.0,
     "d_max": 1.0,
     "logs": "logs/log_noising"

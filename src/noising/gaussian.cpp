@@ -52,6 +52,8 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["noising"].count("type"));
   assert(json["noising"].count("input"));
   assert(json["noising"].count("output"));
+  assert(json["noising"].count("d_min"));
+  assert(json["noising"].count("d_max"));
   assert(json["noising"].count("logs"));
 
   std::string type = json["noising"]["type"];
@@ -59,7 +61,10 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 
   input = json["noising"]["input"];
   output = json["noising"]["output"];
-  output_log = json["combine"]["logs"];
+  output_log = json["noising"]["logs"];
+  dist_min = json["noising"]["d_min"];
+  dist_max = json["noising"]["d_max"];
+  assert(dist_min < dist_max);
 
   for (auto&& name : json["input"]["scalars"])
     scalars.push_back(name);

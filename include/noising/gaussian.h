@@ -68,9 +68,11 @@ private:
   std::stringstream debug_log;
   std::unique_ptr<HACCDataLoader> ioMgr;
 
-  int num_scalars = 0;
+  int num_scalars  = 0;
   long local_count = 0;
   long total_count = 0;
+  double dist_min  = 0.;
+  double dist_max  = 1.;
 
   std::vector<std::string> scalars;
   std::vector<std::vector<float>> dataset;  // to be dumped

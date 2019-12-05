@@ -46,5 +46,11 @@
     "non-halos":"/projects/exasky_data/hoby/analysis/data-non-halo-fpzip-26bits__data-non-halo-raw",
     "output": "/projects/exasky_data/hoby/analysis/data-combined-zip-26bits",
     "logs": "logs/log_analysis_post-process"
+  },
+  "noising": {
+    "type": "gaussian",
+    "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
+    "output":"/projects/exasky_data/hoby/analysis/data-noised",
+    "logs": "logs/log_noising"
   }
 }

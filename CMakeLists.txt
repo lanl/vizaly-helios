@@ -56,10 +56,12 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 add_executable(compress)
 add_executable(analysis)
 add_executable(combine)
+add_executable(noising)
 
 target_include_directories(compress PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(analysis PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(combine  PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(noising  PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_sources(compress PRIVATE
 		src/utils/tools.cpp
@@ -94,6 +96,14 @@ target_sources(combine PRIVATE
 		src/combine/merge.cpp
 		src/combine/run.cpp)
 
+target_sources(noising PRIVATE
+		src/utils/tools.cpp
+		src/utils/memory.cpp
+		src/io/data.cpp
+		src/io/hacc.cpp
+		src/noising/gaussian.cpp
+		src/noising/run.cpp)
+
 # hacc data io
 add_library(gio STATIC)
 target_compile_features(gio PUBLIC cxx_std_17)
@@ -120,6 +130,7 @@ target_link_libraries(gio PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(compress PRIVATE gio)
 target_link_libraries(analysis PRIVATE gio)
 target_link_libraries(combine PRIVATE gio)
+target_link_libraries(noising PRIVATE gio)
 
 # enable/disable compressors
 option(ENABLE_BLOSC   "Enable BLOSC"   OFF)

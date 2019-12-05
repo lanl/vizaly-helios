@@ -175,8 +175,24 @@ void Noising::dump() {
 /* -------------------------------------------------------------------------- */
 void Noising::processField(int i) {
 
-  // TODO
+  assert(i < num_scalars);
 
+  // generate a seed for random engine
+  // we have to re-generate it for each scalar
+  std::random_device device;
+
+  // use Mersenne twister engine to generate pseudo-random numbers.
+  std::mt19937 engine { device() };
+
+  // define a normal distribution generator
+  double const mean = 0.5 * (dist_min + dist_max);
+  double const stddev = (dist_max - dist_min) * dev_fact;
+
+  std::normal_distribution<double> distrib(mean, stddev);
+
+  for (float& val : dataset[i]) {
+    val += distrib(engine);
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -189,6 +205,10 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
+  for (int i = 0; i < num_scalars; ++i) { processField(i); }
+
+  debug_log << "\tdist_range: ["<< dist_min << ", "<< dist_max << "]."<< std::endl;
+  debug_log << "\tdeviation: "<< (dist_max - dist_min) * dev_fact << "."<< std::endl;
   debug_log << "\tlocal updated: "<< local_count << " particles,"<< std::endl;
   debug_log << "\ttotal updated: "<< total_count << " particles."<< std::endl;
   MPI_Barrier(comm);

@@ -31,12 +31,10 @@
 
 #pragma once
 /* -------------------------------------------------------------------------- */
-#include <set>
-#include <random>
-#include <unordered_set>
-#include <mpi.h>
 #include <cassert>
+#include <random>
 #include <fstream>
+#include <mpi.h>
 
 #include "utils/json.h"
 #include "utils/tools.h"
@@ -71,8 +69,10 @@ private:
   int num_scalars  = 0;
   long local_count = 0;
   long total_count = 0;
-  double dist_min  = 0.;
-  double dist_max  = 1.;
+
+  double dist_min  = -1.0;  // TODO per scalar range
+  double dist_max  =  1.0;
+  double dev_fact  =  0.1;
 
   std::vector<std::string> scalars;
   std::vector<std::vector<float>> dataset;  // to be dumped

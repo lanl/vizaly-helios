@@ -99,8 +99,8 @@ size_t Noising::cache(long offset) {
   if (ioMgr->load("id")) {
     auto const n = ioMgr->getNumElements();
     auto const data = static_cast<long*>(ioMgr->data);
-    index.resize(n + offset);
-    std::copy(data, data + n, index.data() + offset);
+    particles_index.resize(n + offset);
+    std::copy(data, data + n, particles_index.data() + offset);
   }
 
   if (my_rank == 0) {
@@ -118,7 +118,7 @@ size_t Noising::cache(long offset) {
   debug_log << " done." << std::endl;
   MPI_Barrier(comm);
 
-  size_t const copied_count = index.size() - offset;
+  size_t const copied_count = particles_index.size() - offset;
   return copied_count;
 };
 
@@ -162,7 +162,7 @@ void Noising::dump() {
     gioWriter.addVariable(scalars[i].data(), dataset[i].data(), flag);
   }
 
-  gioWriter.addVariable("id", index.data(), default_flag);
+  gioWriter.addVariable("id", particles_index.data(), default_flag);
   gioWriter.write();
 
   debug_log << " done." << std::endl;
@@ -173,11 +173,11 @@ void Noising::dump() {
 }
 
 /* -------------------------------------------------------------------------- */
-std::vector<float> Noising::computeGaussianNoise(int field_id) {
+std::vector<float> Noising::computeGaussianNoise(int field) {
 
-  assert(field_id < num_scalars);
+  assert(field < num_scalars);
 
-  int const nb_particles = dataset[field_id].size();
+  int const nb_particles = dataset[field].size();
   std::vector<float> noise(nb_particles);
 
   // generate a seed for random engine
@@ -200,19 +200,81 @@ std::vector<float> Noising::computeGaussianNoise(int field_id) {
 }
 
 /* -------------------------------------------------------------------------- */
-void Noising::computeNoiseHistogram(int field_id) {
-  // TODO
+bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
+
+  int const nb_particles = noise.size();
+  assert(nb_particles > 0);
+
+  debug_log << "computing noise histogram for '"<< scalars[i] <<"'"<< std::endl;
+
+  // step 1. determine lower and upper bounds on data
+  float local_max = std::numeric_limits<float>::min();
+  float local_min = std::numeric_limits<float>::max();
+  float total_max = 0;
+  float total_min = 0;
+
+  for (auto const& value : noise) {
+    if (value > local_max) { local_max = value; }
+    if (value < local_min) { local_min = value; }
+  }
+
+  MPI_Allreduce(&local_max, &total_max, 1, MPI_FLOAT, MPI_MAX, comm);
+  MPI_Allreduce(&local_min, &total_min, 1, MPI_FLOAT, MPI_MIN, comm);
+
+  debug_log << "= local_extents: [" << local_min << ", " << local_max << "]"<< std::endl;
+  debug_log << "= total_extents: [" << total_min << ", " << total_max << "]"<< std::endl;
+  MPI_Barrier(comm);
+
+  // Compute histogram of values
+  if (total_max > 0) {
+
+    debug_log << "num_bins: " << num_bins << std::endl;
+
+    long local_histogram[num_bins];
+    long total_histogram[num_bins];
+
+    std::fill(local_histogram, local_histogram + num_bins, 0);
+    std::fill(total_histogram, total_histogram + num_bins, 0);
+
+    double range = total_max - total_min;
+    double capacity = range / num_bins;
+
+    for (auto k=0; k < nb_particles; ++k) {
+      double relative_value = (noise[k] - total_min) / range;
+      int index = static_cast<int>((range * relative_value) / capacity);
+
+      if (index >= num_bins)
+        index--;
+
+      local_histogram[index]++;
+    }
+
+    MPI_Allreduce(local_histogram, total_histogram, num_bins, MPI_LONG, MPI_SUM, comm);
+
+    // fill result array eventually
+    histo[i].clear();
+    histo[i].resize(num_bins);
+
+    for (int j=0; j < num_bins; ++j)
+      histo[i][j] = double(total_histogram[j]) / nb_particles;
+
+    if (my_rank == 0)
+      dumpHistogram(i);
+
+    MPI_Barrier(comm);
+    return true;
+  }
+
+  return false;
 }
 
 /* -------------------------------------------------------------------------- */
-void Noising::computeSignalSpectrum(int field_id) {
+void Noising::computeSignalSpectrum(int field) {
   // TODO
 }
 
 /* -------------------------------------------------------------------------- */
 void Noising::run() {
-
-
 
   ioMgr->init(input, comm);
   local_count = cache();
@@ -221,27 +283,35 @@ void Noising::run() {
 
   for (int i = 0; i < num_scalars; ++i) {
 
-    int const nb_particles = dataset[i].size();
+    debug_log << "Process field "<< scalars[i] << "."<< std::endl;
 
     // a) compute and apply noise on current dataset
-    debug_log << "Applying gaussian noise to "<< scalars[i] <<" field ... ";
-    auto noise = computeGaussianNoise(i);
+    debug_log << "\t- apply gaussian noise ... ";
+    int const nb_particles = dataset[i].size();
+    auto const noise = computeGaussianNoise(i);
     for (int j = 0; j < nb_particles; ++j) {
       dataset[i][j] += noise[j];
     }
 
-    MPI_Barrier(comm);
     debug_log << " done.";
+    MPI_Barrier(comm);
 
-    // b) compute noise histogram
+    // b) compute histogram
+    debug_log << "\t- compute noise histogram ... ";
+    computeHistogram(i, noise);
+    debug_log << " done.";
+    MPI_Barrier(comm);
 
-
+    // c) compute signal spectrum
+    debug_log << "\t- compute signal spectrum ... ";
+    computeSignalSpectrum(i);
+    debug_log << " done.";
+    MPI_Barrier(comm);
   }
 
-  debug_log << "\tdist_range: ["<< dist_min << ", "<< dist_max << "]."<< std::endl;
+  debug_log << "\tdistribution: ["<< dist_min << ", "<< dist_max << "]."<< std::endl;
   debug_log << "\tdeviation: "<< (dist_max - dist_min) * dev_fact << "."<< std::endl;
-  debug_log << "\tlocal updated: "<< local_count << " particles,"<< std::endl;
-  debug_log << "\ttotal updated: "<< total_count << " particles."<< std::endl;
+  debug_log << "\ttotal: "<< total_count << " particles."<< std::endl;
   MPI_Barrier(comm);
 
   // now dump everything
@@ -249,6 +319,27 @@ void Noising::run() {
 
   if (my_rank == 0)
     dumpLogs();
+}
+
+/* -------------------------------------------------------------------------- */
+void Noising::dumpHistogram(int field) {
+
+  assert(field < num_scalars);
+
+  auto const& scalar = scalars[field];
+  std::string path = output_gnu + "_" + scalar +".dat";
+
+  std::ofstream file(path, std::ios::out|std::ios::trunc);
+  assert(file.is_open());
+  assert(file.good());
+
+  file << "# scalar: " << scalar << std::endl;
+  file << "# num_bins: " << std::to_string(num_bins) << std::endl;
+  for (auto const& value : histo[field]) {
+    file << value << std::endl;
+  }
+
+  file.close();
 }
 
 /* -------------------------------------------------------------------------- */

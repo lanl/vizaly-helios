@@ -55,19 +55,21 @@ public:
 private:
 
   // kernels
-  std::vector<float> computeGaussianNoise(int field_id);
-  void computeNoiseHistogram(int field_id);
-  void computeSignalSpectrum(int field_id);
+  std::vector<float> computeGaussianNoise(int field);
+  bool computeHistogram(int i, std::vector<float> const& noise);
+  void computeSignalSpectrum(int field);
 
   // IO
   size_t cache(long offset = 0);
   void dump();
+  void dumpHistogram(int field);
   void dumpLogs();
 
   std::string json_path;
   std::string input;
   std::string output;
   std::string output_log;
+  std::string output_gnu;
   std::stringstream debug_log;
   std::unique_ptr<HACCDataLoader> ioMgr;
 
@@ -81,8 +83,10 @@ private:
 
   std::vector<std::string> scalars;
   std::vector<std::vector<float>> dataset;  // to be dumped
-  std::vector<std::vector<float>> frequency;
-  std::vector<long> index;
+  std::vector<std::vector<float>> histo;
+  std::vector<long> particles_index;
+
+  int const num_bins = 1024;
 
   // MPI
   int my_rank  = 0;

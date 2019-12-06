@@ -191,8 +191,8 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
   std::mt19937 engine { device() };
 
   // define a normal distribution generator
-  float const mean = static_cast<float>(0.5 * (dist_min + dist_max));
-  float const stddev = (dist_max - dist_min) * dev_fact;
+  auto const mean = static_cast<float>(0.5 * (dist_min + dist_max));
+  auto const stddev = static_cast<float>((dist_max - dist_min) * dev_fact);
 
   std::normal_distribution<float> distrib(mean, stddev);
 
@@ -284,7 +284,7 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < num_scalars; ++i) {
 
     debug_log << "Process field "<< scalars[i] << "."<< std::endl;
 
@@ -292,9 +292,9 @@ void Noising::run() {
     debug_log << "\t- apply gaussian noise ... ";
     int const nb_particles = dataset[i].size();
     auto const noise = computeGaussianNoise(i);
-//    for (int j = 0; j < nb_particles; ++j) {
-//      dataset[i][j] += noise[j];
-//    }
+    for (int j = 0; j < nb_particles; ++j) {
+      dataset[i][j] += noise[j];
+    }
 
     debug_log << " done." << std::endl;
     MPI_Barrier(comm);

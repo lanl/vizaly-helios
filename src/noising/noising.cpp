@@ -191,10 +191,10 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
   std::mt19937 engine { device() };
 
   // define a normal distribution generator
-  double const mean = 0.5 * (dist_min + dist_max);
-  double const stddev = (dist_max - dist_min) * dev_fact;
+  float const mean = static_cast<float>(0.5 * (dist_min + dist_max));
+  float const stddev = (dist_max - dist_min) * dev_fact;
 
-  std::normal_distribution<double> distrib(mean, stddev);
+  std::normal_distribution<float> distrib(mean, stddev);
 
   for (auto& val : noise)
     val = distrib(engine);

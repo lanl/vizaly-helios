@@ -77,9 +77,9 @@ private:
   long local_count = 0;
   long total_count = 0;
 
-  double dist_min  = -1.0;  // TODO per scalar range
-  double dist_max  =  1.0;
-  double dev_fact  =  0.1;
+  float dist_min  = -1.0;  // TODO per scalar range
+  float dist_max  =  1.0;
+  float dev_fact  =  0.1;
 
   std::vector<std::string> scalars;
   std::vector<std::vector<float>> dataset;  // to be dumped

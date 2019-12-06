@@ -54,8 +54,13 @@ public:
 
 private:
 
+  // kernels
+  std::vector<float> computeGaussianNoise(int field_id);
+  void computeNoiseHistogram(int field_id);
+  void computeSignalSpectrum(int field_id);
+
+  // IO
   size_t cache(long offset = 0);
-  void applyGaussianNoise(int field_id);
   void dump();
   void dumpLogs();
 
@@ -76,6 +81,7 @@ private:
 
   std::vector<std::string> scalars;
   std::vector<std::vector<float>> dataset;  // to be dumped
+  std::vector<std::vector<float>> frequency;
   std::vector<long> index;
 
   // MPI

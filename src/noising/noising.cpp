@@ -173,9 +173,12 @@ void Noising::dump() {
 }
 
 /* -------------------------------------------------------------------------- */
-void Noising::applyGaussianNoise(int field_id) {
+std::vector<float> Noising::computeGaussianNoise(int field_id) {
 
   assert(field_id < num_scalars);
+
+  int const nb_particles = dataset[field_id].size();
+  std::vector<float> noise(nb_particles);
 
   // generate a seed for random engine
   // we have to re-generate it for each scalar
@@ -190,22 +193,50 @@ void Noising::applyGaussianNoise(int field_id) {
 
   std::normal_distribution<double> distrib(mean, stddev);
 
-  for (float& val : dataset[field_id]) {
-    val += distrib(engine);
-  }
+  for (auto& val : noise)
+    val = distrib(engine);
+
+  return noise;
+}
+
+/* -------------------------------------------------------------------------- */
+void Noising::computeNoiseHistogram(int field_id) {
+  // TODO
+}
+
+/* -------------------------------------------------------------------------- */
+void Noising::computeSignalSpectrum(int field_id) {
+  // TODO
 }
 
 /* -------------------------------------------------------------------------- */
 void Noising::run() {
 
-  debug_log << "Adding gaussian noise to dataset:" << std::endl;
+
 
   ioMgr->init(input, comm);
   local_count = cache();
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  for (int i = 0; i < num_scalars; ++i) { applyGaussianNoise(i); }
+  for (int i = 0; i < num_scalars; ++i) {
+
+    int const nb_particles = dataset[i].size();
+
+    // a) compute and apply noise on current dataset
+    debug_log << "Applying gaussian noise to "<< scalars[i] <<" field ... ";
+    auto noise = computeGaussianNoise(i);
+    for (int j = 0; j < nb_particles; ++j) {
+      dataset[i][j] += noise[j];
+    }
+
+    MPI_Barrier(comm);
+    debug_log << " done.";
+
+    // b) compute noise histogram
+
+
+  }
 
   debug_log << "\tdist_range: ["<< dist_min << ", "<< dist_max << "]."<< std::endl;
   debug_log << "\tdeviation: "<< (dist_max - dist_min) * dev_fact << "."<< std::endl;

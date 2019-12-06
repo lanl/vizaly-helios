@@ -55,6 +55,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["noising"].count("d_min"));
   assert(json["noising"].count("d_max"));
   assert(json["noising"].count("logs"));
+  assert(json["noising"].count("plots"));
 
   std::string type = json["noising"]["type"];
   assert(type == "gaussian");
@@ -62,6 +63,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   input = json["noising"]["input"];
   output = json["noising"]["output"];
   output_log = json["noising"]["logs"];
+  output_plot = json["noising"]["plots"];
   dist_min = json["noising"]["d_min"];
   dist_max = json["noising"]["d_max"];
   assert(dist_min < dist_max);
@@ -281,7 +283,7 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  for (int i = 0; i < num_scalars; ++i) {
+  for (int i = 0; i < 1; ++i) {
 
     debug_log << "Process field "<< scalars[i] << "."<< std::endl;
 
@@ -289,9 +291,9 @@ void Noising::run() {
     debug_log << "\t- apply gaussian noise ... ";
     int const nb_particles = dataset[i].size();
     auto const noise = computeGaussianNoise(i);
-    for (int j = 0; j < nb_particles; ++j) {
-      dataset[i][j] += noise[j];
-    }
+//    for (int j = 0; j < nb_particles; ++j) {
+//      dataset[i][j] += noise[j];
+//    }
 
     debug_log << " done.";
     MPI_Barrier(comm);
@@ -327,7 +329,7 @@ void Noising::dumpHistogram(int field) {
   assert(field < num_scalars);
 
   auto const& scalar = scalars[field];
-  std::string path = output_gnu + "_" + scalar +".dat";
+  std::string path = output_plot + "_" + scalar + ".dat";
 
   std::ofstream file(path, std::ios::out|std::ios::trunc);
   assert(file.is_open());

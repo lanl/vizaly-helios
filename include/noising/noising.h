@@ -69,7 +69,7 @@ private:
   std::string input;
   std::string output;
   std::string output_log;
-  std::string output_gnu;
+  std::string output_plot;
   std::stringstream debug_log;
   std::unique_ptr<HACCDataLoader> ioMgr;
 

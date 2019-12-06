@@ -133,7 +133,7 @@ bool Analyzer::computeFrequencies(int i, float* data) {
 
     for (auto k=0; k < n; ++k) {
       double relative_value = (data[k] - total_min) / range;
-      int index = (range * relative_value) / capacity;
+      int index = static_cast<int>((range * relative_value) / capacity);
 
       if (index >= num_bins)
         index--;

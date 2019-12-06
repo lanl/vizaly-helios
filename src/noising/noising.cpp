@@ -73,6 +73,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 
   num_scalars = scalars.size();
   dataset.resize(num_scalars);
+  histo.resize(num_scalars);
 
   // set the IO manager
   ioMgr = std::make_unique<HACCDataLoader>();

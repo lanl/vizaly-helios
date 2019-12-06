@@ -296,19 +296,19 @@ void Noising::run() {
 //      dataset[i][j] += noise[j];
 //    }
 
-    debug_log << " done.";
+    debug_log << " done." << std::endl;
     MPI_Barrier(comm);
 
     // b) compute histogram
     debug_log << "\t- compute noise histogram ... ";
     computeHistogram(i, noise);
-    debug_log << " done.";
+    debug_log << " done." << std::endl;
     MPI_Barrier(comm);
 
     // c) compute signal spectrum
     debug_log << "\t- compute signal spectrum ... ";
     computeSignalSpectrum(i);
-    debug_log << " done.";
+    debug_log << " done." << std::endl;
     MPI_Barrier(comm);
   }
 

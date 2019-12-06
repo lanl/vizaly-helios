@@ -55,7 +55,7 @@ public:
 private:
 
   size_t cache(long offset = 0);
-  void processField(int i);
+  void applyGaussianNoise(int field_id);
   void dump();
   void dumpLogs();
 

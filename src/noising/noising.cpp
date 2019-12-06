@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "noising/gaussian.h"
+#include "noising/noising.h"
 
 /* -------------------------------------------------------------------------- */
 Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_comm)
@@ -173,9 +173,9 @@ void Noising::dump() {
 }
 
 /* -------------------------------------------------------------------------- */
-void Noising::processField(int i) {
+void Noising::applyGaussianNoise(int field_id) {
 
-  assert(i < num_scalars);
+  assert(field_id < num_scalars);
 
   // generate a seed for random engine
   // we have to re-generate it for each scalar
@@ -190,7 +190,7 @@ void Noising::processField(int i) {
 
   std::normal_distribution<double> distrib(mean, stddev);
 
-  for (float& val : dataset[i]) {
+  for (float& val : dataset[field_id]) {
     val += distrib(engine);
   }
 }
@@ -205,7 +205,7 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  for (int i = 0; i < num_scalars; ++i) { processField(i); }
+  for (int i = 0; i < num_scalars; ++i) { applyGaussianNoise(i); }
 
   debug_log << "\tdist_range: ["<< dist_min << ", "<< dist_max << "]."<< std::endl;
   debug_log << "\tdeviation: "<< (dist_max - dist_min) * dev_fact << "."<< std::endl;

@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "noising/gaussian.h"
+#include "noising/noising.h"
 /* -------------------------------------------------------------------------- */
 int main(int argc, char* argv[]){
 

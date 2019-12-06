@@ -101,7 +101,7 @@ target_sources(noising PRIVATE
 		src/utils/memory.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp
-		src/noising/gaussian.cpp
+		src/noising/noising.cpp
 		src/noising/run.cpp)
 
 # hacc data io

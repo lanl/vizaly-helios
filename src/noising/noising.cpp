@@ -354,6 +354,5 @@ void Noising::dumpLogs() {
 
   debug_log.clear();
   debug_log.str("");
-  MPI_Barrier(comm);
 }
 /* -------------------------------------------------------------------------- */

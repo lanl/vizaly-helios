@@ -46,8 +46,8 @@
     "type": "gaussian",
     "input": "../tests/data.reduced.mpicosmo",
     "output":"../tests/data-full-noised",
-    "d_min": 0.0,
-    "d_max": 1.0,
+    "d_min": -0.5,
+    "d_max":  0.5,
     "logs": "logs/log_noising",
     "plots": "noise_distrib"
   }

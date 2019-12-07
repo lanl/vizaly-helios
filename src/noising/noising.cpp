@@ -263,8 +263,7 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
     double capacity = range / num_bins;
 
     for (auto k=0; k < nb_particles; ++k) {
-      double relative_value = (noise[k] - total_min) / range;
-      int index = static_cast<int>((range * relative_value) / capacity);
+      int index = (noise[k] - total_min) / capacity;
 
       if (index >= num_bins)
         index--;
@@ -278,8 +277,13 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
     histo[i].clear();
     histo[i].resize(num_bins);
 
+    // normalize and store data
+    long total_histo = 0;
     for (int j=0; j < num_bins; ++j)
-      histo[i][j] = double(total_histogram[j]) / nb_particles;
+      total_histo += total_histogram[j];
+
+    for (int j=0; j < num_bins; ++j)
+      histo[i][j] = 100. * double(total_histogram[j]) / total_histo;
 
     if (my_rank == 0)
       dumpHistogram(i);
@@ -304,7 +308,7 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  for (int i = 0; i < num_scalars; ++i) {
+  for (int i = 0; i < 1; ++i) {
 
     debug_log << "Process field "<< scalars[i] << "."<< std::endl;
 
@@ -358,8 +362,13 @@ void Noising::dumpHistogram(int field) {
 
   file << "# scalar: " << scalar << std::endl;
   file << "# num_bins: " << std::to_string(num_bins) << std::endl;
+
+
+  double width = static_cast<float>((dist_max - dist_min) / num_bins);
+  int k = 1;
   for (auto const& value : histo[field]) {
-    file << value << std::endl;
+    file << dist_min + (k * width) << "\t"<< value << std::endl;
+    k++;
   }
 
   file.close();

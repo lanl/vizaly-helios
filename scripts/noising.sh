@@ -3,7 +3,7 @@
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 1
 #SBATCH --partition scaling
-#SBATCH --job-name analysis
+#SBATCH --job-name noising
 
 NRANKS=8
 

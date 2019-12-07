@@ -180,24 +180,44 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
 
   assert(field < num_scalars);
 
-  int const nb_particles = dataset[field].size();
-  std::vector<float> noise(nb_particles);
+  // first gather the dataset size per rank.
+  int nb_local = dataset[field].size();
+  int nb_per_rank[nb_ranks];
+  MPI_Gather(&nb_local, 1, MPI_INT, nb_per_rank, 1, MPI_INT, 0, comm);
 
-  // generate a seed for random engine
-  // we have to re-generate it for each scalar
-  std::random_device device;
+  std::vector<float> noise(nb_local);
 
-  // use Mersenne twister engine to generate pseudo-random numbers.
-  std::mt19937 engine { device() };
+  // generate noise only on master rank
+  if (my_rank == 0) {
 
-  // define a normal distribution generator
-  auto const mean = static_cast<float>(0.5 * (dist_min + dist_max));
-  auto const stddev = static_cast<float>((dist_max - dist_min) * dev_fact);
+    // generate a seed for random engine
+    std::random_device device;
 
-  std::normal_distribution<float> distrib(mean, stddev);
+    // use Mersenne twister engine
+    std::mt19937 engine { device() };
 
-  for (auto& val : noise)
-    val = distrib(engine);
+    // define a normal distribution generator
+    auto const mean = static_cast<float>(0.5 * (dist_min + dist_max));
+    auto const stddev = static_cast<float>((dist_max - dist_min) * dev_fact);
+
+    std::normal_distribution<float> distrib(mean, stddev);
+
+    for (auto& val : noise)
+      val = distrib(engine);
+
+    // generate number for current rank and send it
+    for (int i = 1; i < nb_ranks; ++i) {
+      // generate data
+      std::vector<float> dist_noise(nb_per_rank[i]);
+      for (int j = 0; j < nb_per_rank[i]; ++j) {
+        dist_noise[j] = distrib(engine);
+      }
+      // send to correct rank
+      MPI_Send(dist_noise.data(), nb_per_rank[i], MPI_FLOAT, i, 0, comm);
+    }
+  } else {
+    MPI_Recv(noise.data(), nb_local, MPI_FLOAT, 0, 0, comm, MPI_STATUS_IGNORE);
+  }
 
   return noise;
 }

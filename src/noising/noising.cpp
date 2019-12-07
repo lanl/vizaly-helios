@@ -308,7 +308,7 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < num_scalars; ++i) {
 
     debug_log << "Process field "<< scalars[i] << "."<< std::endl;
 

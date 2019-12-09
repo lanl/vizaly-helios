@@ -229,72 +229,49 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
 
   int const nb_particles = noise.size();
   assert(nb_particles > 0);
+  assert(num_bins > 0);
+  assert(dist_max > dist_min);
 
-  debug_log << "computing noise histogram for '"<< scalars[i] <<"'"<< std::endl;
+  debug_log << "Computing noise histogram for '"<< scalars[i] <<"' ";
+  debug_log << "using "<< num_bins << " bins." << std::endl;
 
-  // step 1. determine lower and upper bounds on data
-  float local_max = std::numeric_limits<float>::min();
-  float local_min = std::numeric_limits<float>::max();
-  float total_max = 0;
-  float total_min = 0;
+  long local_histo[num_bins];
+  long total_histo[num_bins];
 
-  for (auto const& value : noise) {
-    if (value > local_max) { local_max = value; }
-    if (value < local_min) { local_min = value; }
+  std::fill(local_histo, local_histo + num_bins, 0);
+  std::fill(total_histo, total_histo + num_bins, 0);
+
+  double range = dist_max - dist_min;
+  double capacity = range / num_bins;
+
+  for (auto k=0; k < nb_particles; ++k) {
+    int index = static_cast<int>((noise[k] - dist_min) / capacity);
+
+    if (index >= num_bins)
+      index--;
+
+    local_histo[index]++;
   }
 
-  MPI_Allreduce(&local_max, &total_max, 1, MPI_FLOAT, MPI_MAX, comm);
-  MPI_Allreduce(&local_min, &total_min, 1, MPI_FLOAT, MPI_MIN, comm);
+  MPI_Allreduce(local_histo, total_histo, num_bins, MPI_LONG, MPI_SUM, comm);
 
-  debug_log << "= local_extents: [" << local_min << ", " << local_max << "]"<< std::endl;
-  debug_log << "= total_extents: [" << total_min << ", " << total_max << "]"<< std::endl;
+  // fill result array eventually
+  histo[i].clear();
+  histo[i].resize(num_bins);
+
+  // normalize and store data
+  long sum_values = 0;
+  for (int j=0; j < num_bins; ++j)
+    sum_values += total_histo[j];
+
+  for (int j=0; j < num_bins; ++j)
+    histo[i][j] = static_cast<float>(100. * double(total_histo[j]) / sum_values);
+
+  if (my_rank == 0)
+    dumpHistogram(i);
+
   MPI_Barrier(comm);
-
-  // Compute histogram of values
-  if (total_max > 0) {
-
-    debug_log << "num_bins: " << num_bins << std::endl;
-
-    long local_histogram[num_bins];
-    long total_histogram[num_bins];
-
-    std::fill(local_histogram, local_histogram + num_bins, 0);
-    std::fill(total_histogram, total_histogram + num_bins, 0);
-
-    double range = total_max - total_min;
-    double capacity = range / num_bins;
-
-    for (auto k=0; k < nb_particles; ++k) {
-      int index = (noise[k] - total_min) / capacity;
-
-      if (index >= num_bins)
-        index--;
-
-      local_histogram[index]++;
-    }
-
-    MPI_Allreduce(local_histogram, total_histogram, num_bins, MPI_LONG, MPI_SUM, comm);
-
-    // fill result array eventually
-    histo[i].clear();
-    histo[i].resize(num_bins);
-
-    // normalize and store data
-    long total_histo = 0;
-    for (int j=0; j < num_bins; ++j)
-      total_histo += total_histogram[j];
-
-    for (int j=0; j < num_bins; ++j)
-      histo[i][j] = 100. * double(total_histogram[j]) / total_histo;
-
-    if (my_rank == 0)
-      dumpHistogram(i);
-
-    MPI_Barrier(comm);
-    return true;
-  }
-
-  return false;
+  return true;
 }
 
 /* -------------------------------------------------------------------------- */

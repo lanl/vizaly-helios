@@ -79,7 +79,7 @@ private:
 
   float dist_min  = -1.0;  // TODO per scalar range
   float dist_max  =  1.0;
-  float dev_fact  =  0.1;
+  float dev_fact  =  0.4;
 
   std::vector<std::string> scalars;
   std::vector<std::vector<float>> dataset;  // to be dumped

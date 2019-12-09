@@ -130,8 +130,6 @@ size_t Noising::cache(long offset) {
 void Noising::dump() {
 
   debug_log << "Dumping dataset ... ";
-  if (my_rank == 0)
-    std::cout << debug_log.str();
 
   assert(local_count > 0);
 
@@ -169,9 +167,6 @@ void Noising::dump() {
   gioWriter.write();
 
   debug_log << " done." << std::endl;
-  if (my_rank == 0)
-    std::cout << debug_log.str();
-
   MPI_Barrier(comm);
 }
 
@@ -180,7 +175,7 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
 
   assert(field < num_scalars);
 
-  debug_log << "Computing gaussian noise for '"<< scalars[field] <<"'"<< std::endl;
+  debug_log << "Applying gaussian noise to '"<< scalars[field] <<"' ... ";
 
   // first gather the dataset size per rank.
   int nb_local = dataset[field].size();
@@ -221,6 +216,7 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
     MPI_Recv(noise.data(), nb_local, MPI_FLOAT, 0, 0, comm, MPI_STATUS_IGNORE);
   }
 
+  debug_log << "done" << std::endl;
   return noise;
 }
 
@@ -232,8 +228,8 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
   assert(num_bins > 0);
   assert(dist_max > dist_min);
 
-  debug_log << "Computing noise histogram for '"<< scalars[i] <<"' ";
-  debug_log << "using "<< num_bins << " bins." << std::endl;
+  debug_log << "Computing histogram for '"<< scalars[i] <<"' ";
+  debug_log << "using "<< num_bins << " bins ... ";
 
   long local_histo[num_bins];
   long total_histo[num_bins];
@@ -271,6 +267,7 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
     dumpHistogram(i);
 
   MPI_Barrier(comm);
+  debug_log << "done" << std::endl;
   return true;
 }
 
@@ -287,7 +284,6 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
-  debug_log << "Applying gaussian noise to dataset."<< std::endl;
   debug_log << "Parameters: range: ["<< dist_min << ", "<< dist_max << "], ";
   debug_log << "deviation: "<< (dist_max - dist_min) * dev_fact << ", ";
   debug_log << "count: "<< total_count << " particles."<< std::endl;
@@ -351,6 +347,9 @@ void Noising::dumpLogs() {
   logfile << debug_log.str();
   logfile.close();
   std::cout << "Logs generated in "<< output_log << std::endl;
+
+  if (my_rank == 0)
+    std::cout << debug_log.str();
 
   debug_log.clear();
   debug_log.str("");

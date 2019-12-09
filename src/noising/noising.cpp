@@ -272,9 +272,7 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
 }
 
 /* -------------------------------------------------------------------------- */
-void Noising::computeSignalSpectrum(int field) {
-  // TODO
-}
+void Noising::computeSignalSpectrum(int field) { /* TODO */ }
 
 /* -------------------------------------------------------------------------- */
 void Noising::run() {
@@ -299,9 +297,11 @@ void Noising::run() {
     }
     MPI_Barrier(comm);
 
-    // b) compute histogram
-    computeHistogram(i, noise);
-    MPI_Barrier(comm);
+    // b) compute histogram only for first scalar
+    if (i == 0) {
+      computeHistogram(i, noise);
+      MPI_Barrier(comm);
+    }
 
     // c) compute signal spectrum
     computeSignalSpectrum(i);

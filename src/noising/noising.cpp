@@ -68,7 +68,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   dist_max = json["noising"]["d_max"];
   assert(dist_min < dist_max);
 
-  for (auto&& name : json["input"]["scalars"])
+  for (auto&& name : json["noising"]["scalars"])
     scalars.push_back(name);
 
   num_scalars = scalars.size();

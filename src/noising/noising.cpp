@@ -308,38 +308,30 @@ void Noising::run() {
   total_count = 0;
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
+  debug_log << "Applying gaussian noise to dataset."<< std::endl;
+  debug_log << "Parameters: range: ["<< dist_min << ", "<< dist_max << "], ";
+  debug_log << "deviation: "<< (dist_max - dist_min) * dev_fact << ", ";
+  debug_log << "count: "<< total_count << " particles."<< std::endl;
+  MPI_Barrier(comm);
+
   for (int i = 0; i < num_scalars; ++i) {
 
-    debug_log << "Process field "<< scalars[i] << "."<< std::endl;
-
     // a) compute and apply noise on current dataset
-    debug_log << "\t- apply gaussian noise ... ";
     int const nb_particles = dataset[i].size();
     auto const noise = computeGaussianNoise(i);
     for (int j = 0; j < nb_particles; ++j) {
       dataset[i][j] += noise[j];
     }
-
-    debug_log << " done." << std::endl;
     MPI_Barrier(comm);
 
     // b) compute histogram
-    debug_log << "\t- compute noise histogram ... ";
     computeHistogram(i, noise);
-    debug_log << " done." << std::endl;
     MPI_Barrier(comm);
 
     // c) compute signal spectrum
-    debug_log << "\t- compute signal spectrum ... ";
     computeSignalSpectrum(i);
-    debug_log << " done." << std::endl;
     MPI_Barrier(comm);
   }
-
-  debug_log << "\tdistribution: ["<< dist_min << ", "<< dist_max << "]."<< std::endl;
-  debug_log << "\tdeviation: "<< (dist_max - dist_min) * dev_fact << "."<< std::endl;
-  debug_log << "\ttotal: "<< total_count << " particles."<< std::endl;
-  MPI_Barrier(comm);
 
   // now dump everything
   dump();

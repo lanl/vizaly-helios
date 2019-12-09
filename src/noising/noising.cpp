@@ -52,6 +52,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["noising"].count("type"));
   assert(json["noising"].count("input"));
   assert(json["noising"].count("output"));
+  assert(json["noising"].count("scalars"));
   assert(json["noising"].count("d_min"));
   assert(json["noising"].count("d_max"));
   assert(json["noising"].count("logs"));
@@ -67,10 +68,12 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   dist_min = json["noising"]["d_min"];
   dist_max = json["noising"]["d_max"];
   assert(dist_min < dist_max);
+  assert(deviation < std::min(std::abs(dist_min), std::abs(dist_max)));
 
   for (auto&& name : json["noising"]["scalars"])
     scalars.push_back(name);
 
+  assert(not scalars.empty());
   num_scalars = scalars.size();
   dataset.resize(num_scalars);
   histo.resize(num_scalars);
@@ -195,9 +198,8 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
 
     // define a normal distribution generator
     auto const mean = static_cast<float>(0.5 * (dist_min + dist_max));
-    auto const stddev = static_cast<float>((dist_max - dist_min) * dev_fact);
 
-    std::normal_distribution<float> distrib(mean, stddev);
+    std::normal_distribution<float> distrib(mean, deviation);
 
     for (auto& val : noise)
       val = distrib(engine);
@@ -231,18 +233,32 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
   debug_log << "Computing histogram for '"<< scalars[i] <<"' ";
   debug_log << "using "<< num_bins << " bins ... ";
 
+  // step 1. determine lower and upper bounds on data
+  double local_max = std::numeric_limits<float>::min();
+  double local_min = std::numeric_limits<float>::max();
+  double total_max = 0;
+  double total_min = 0;
+
+  for (auto j=0; j < nb_particles; ++j) {
+    if (noise[j] > local_max) { local_max = noise[j]; }
+    if (noise[j] < local_min) { local_min = noise[j]; }
+  }
+
+  MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
+  MPI_Barrier(comm);
+
   long local_histo[num_bins];
   long total_histo[num_bins];
 
   std::fill(local_histo, local_histo + num_bins, 0);
   std::fill(total_histo, total_histo + num_bins, 0);
 
-  double range = dist_max - dist_min;
+  double range = total_max - total_min;
   double capacity = range / num_bins;
 
   for (auto k=0; k < nb_particles; ++k) {
-    int index = static_cast<int>((noise[k] - dist_min) / capacity);
-
+    int index = static_cast<int>((noise[k] - total_min) / capacity);
     if (index >= num_bins)
       index--;
 
@@ -283,7 +299,7 @@ void Noising::run() {
   MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
   debug_log << "Parameters: range: ["<< dist_min << ", "<< dist_max << "], ";
-  debug_log << "deviation: "<< (dist_max - dist_min) * dev_fact << ", ";
+  debug_log << "deviation: " << deviation << ", ";
   debug_log << "count: "<< total_count << " particles."<< std::endl;
   MPI_Barrier(comm);
 

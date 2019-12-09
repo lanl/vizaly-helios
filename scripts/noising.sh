@@ -8,7 +8,7 @@
 NRANKS=8
 
 BUILD="/projects/exasky/hoby-projects/helios/build"
-INPUT_JSON="../inputs/analysis_pipeline.json"
+INPUT_JSON="../inputs/noising.json"
 
 source "/home/hoby/.bashrc" && cd ${BUILD} &&
 mpirun -np ${NRANKS} ./noising ${INPUT_JSON}

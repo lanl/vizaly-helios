@@ -41,16 +41,6 @@
       { "name": "mean_square_error" },
       { "name": "psnr" }
     ]
-  },
-  "noising": {
-    "type": "gaussian",
-    "input": "../tests/data.reduced.mpicosmo",
-    "output":"../tests/data-full-noised",
-    "scalars":["x", "y", "z", "vx", "vy", "vz"],
-    "d_min": -1.0,
-    "d_max":  1.0,
-    "logs": "logs/log_noising",
-    "plots": "noise_distrib"
   }
 }
 

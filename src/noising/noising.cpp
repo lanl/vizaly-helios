@@ -55,6 +55,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["noising"].count("scalars"));
   assert(json["noising"].count("d_min"));
   assert(json["noising"].count("d_max"));
+  assert(json["noising"].count("deviat"));
   assert(json["noising"].count("logs"));
   assert(json["noising"].count("plots"));
 
@@ -67,6 +68,7 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   output_plot = json["noising"]["plots"];
   dist_min = json["noising"]["d_min"];
   dist_max = json["noising"]["d_max"];
+  deviation = json["noising"]["deviat"];
   assert(dist_min < dist_max);
   assert(deviation < std::min(std::abs(dist_min), std::abs(dist_max)));
 

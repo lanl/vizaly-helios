@@ -46,15 +46,5 @@
     "non-halos":"/projects/exasky_data/hoby/analysis/data-non-halo-fpzip-26bits__data-non-halo-raw",
     "output": "/projects/exasky_data/hoby/analysis/data-combined-zip-26bits",
     "logs": "logs/log_analysis_post-process"
-  },
-  "noising": {
-    "type": "gaussian",
-    "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
-    "output":"/projects/exasky_data/hoby/analysis/data-full-noised",
-    "scalars":["x", "y", "z", "vx", "vy", "vz"],
-    "d_min": 0.5,
-    "d_max": 1.0,
-    "logs": "logs/log_noising",
-    "plots": "noise_distrib"
   }
 }

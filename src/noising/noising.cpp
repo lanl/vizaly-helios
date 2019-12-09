@@ -180,6 +180,8 @@ std::vector<float> Noising::computeGaussianNoise(int field) {
 
   assert(field < num_scalars);
 
+  debug_log << "Computing gaussian noise for '"<< scalars[field] <<"'"<< std::endl;
+
   // first gather the dataset size per rank.
   int nb_local = dataset[field].size();
   int nb_per_rank[nb_ranks];
@@ -355,8 +357,7 @@ void Noising::dumpHistogram(int field) {
   file << "# scalar: " << scalar << std::endl;
   file << "# num_bins: " << std::to_string(num_bins) << std::endl;
 
-
-  double width = static_cast<float>((dist_max - dist_min) / num_bins);
+  auto const width = static_cast<float>((dist_max - dist_min) / num_bins);
   int k = 1;
   for (auto const& value : histo[field]) {
     file << dist_min + (k * width) << "\t"<< value << std::endl;

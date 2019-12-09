@@ -298,8 +298,10 @@ void Noising::run() {
     MPI_Barrier(comm);
 
     // b) compute histogram only for first scalar
-    computeHistogram(i, noise);
-    MPI_Barrier(comm);
+    if (i == 0) {
+      computeHistogram(i, noise);
+      MPI_Barrier(comm);
+    }
 
     // c) compute signal spectrum
     computeSignalSpectrum(i);

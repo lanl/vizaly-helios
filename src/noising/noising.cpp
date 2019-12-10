@@ -290,7 +290,13 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
 }
 
 /* -------------------------------------------------------------------------- */
-void Noising::computeSignalSpectrum(int field) { /* TODO */ }
+#if HAVE_FFTW
+void Noising::computePowerSpectrum(int field) {
+
+
+
+}
+#endif
 
 /* -------------------------------------------------------------------------- */
 void Noising::run() {
@@ -322,7 +328,7 @@ void Noising::run() {
     }
 
     // c) compute signal spectrum
-    computeSignalSpectrum(i);
+    computePowerSpectrum(i);
     MPI_Barrier(comm);
   }
 

@@ -132,6 +132,14 @@ target_link_libraries(analysis PRIVATE gio)
 target_link_libraries(combine PRIVATE gio)
 target_link_libraries(noising PRIVATE gio)
 
+# link to fftw
+find_package(fftw)
+if (FFTW_FOUND)
+	target_include_directories(noising PRIVATE ${FFTW_INCLUDES})
+	target_link_libraries(noising PRIVATE ${FFTW_LIBRARIES})
+	target_compile_definitions(noising PRIVATE -DHAVE_FFTW=1)
+endif()
+
 # enable/disable compressors
 option(ENABLE_BLOSC   "Enable BLOSC"   OFF)
 option(ENABLE_FPZIP   "Enable FPZIP"   ON)

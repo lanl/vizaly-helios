@@ -290,13 +290,139 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
 }
 
 /* -------------------------------------------------------------------------- */
+void Noising::computeSpectralDensity(std::vector<float> const& noise) {
 #if HAVE_FFTW
-void Noising::computePowerSpectrum(int field) {
+  int local_size = noise.size();
+  int total_size = 0;
+  MPI_Allreduce(&local_size, &total_size, 1, MPI_INT, MPI_SUM, comm);
 
 
+  fftw_plan plan;
+  fftw_complex *signal, *output;
 
-}
+  ptrdiff_t const n0 = total_size;
+  ptrdiff_t local_alloc;
+  ptrdiff_t local_ni, local_i_start;
+  ptrdiff_t local_no, local_o_start;
+
+
+  //fftw_complex data[local_size];
+  // get local data size and allocate
+  if (my_rank == 0)
+    std::cout << "getting local data size ... ";
+  local_alloc = fftw_mpi_local_size_1d(n0, comm,
+                                       FFTW_FORWARD, FFTW_ESTIMATE,
+                                       &local_ni, &local_i_start,
+                                       &local_no, &local_o_start);
+  if (my_rank == 0)
+    std::cout << "done" << std::endl;
+
+  if (my_rank == 0)
+    std::cout << "allocating memory ... ";
+  signal = fftw_alloc_complex(local_alloc);
+  output = fftw_alloc_complex(local_alloc);
+  MPI_Barrier(comm);
+
+  if (my_rank == 0)
+    std::cout << "done" << std::endl;
+
+  // create plan and copy dataset
+  if (my_rank == 0)
+    std::cout << "creating plan and copying dataset ... ";
+
+  plan = fftw_mpi_plan_dft_1d(n0, signal, output, comm, FFTW_FORWARD, FFTW_ESTIMATE);
+
+  for (int i = 0; i < local_size; ++i) {
+    signal[i][0] = noise[i];
+    signal[i][1] = 0;
+  }
+
+  MPI_Barrier(comm);
+  if (my_rank == 0)
+    std::cout << "done" << std::endl;
+
+  // compute discrete fourier transform
+  if (my_rank == 0)
+    std::cout << "compute discrete fourier transform ... ";
+  fftw_execute(plan);
+
+  MPI_Barrier(comm);
+  if (my_rank == 0)
+    std::cout << "done" << std::endl;
+
+  // compute power spectral density
+  double real = 0;
+  double imag = 0;
+
+
+  if (my_rank == 0)
+    std::cout << "compute power spectral density ... ";
+
+  int const nb_freq = std::ceil(local_size / 2);
+  //int const nb_freq = local_size;
+  std::vector<float> magnitude(nb_freq);
+
+  for (int i = 0; i < nb_freq; ++i) {
+
+    real = output[i][0] / total_size;
+    imag = output[i][1] / total_size;
+    magnitude[i] = (real * real + imag * imag) / 2.;
+
+    if (my_rank == 0)
+      std::cout << "real="<< real <<", imag="<< imag <<", magnitude["<< i<<"]=" << magnitude[i] << std::endl;
+  }
+
+  //magnitude[0] /= 2;
+  MPI_Barrier(comm);
+  if (my_rank == 0)
+    std::cout << "done" << std::endl;
+
+  // output result and finalize
+  fftw_free(signal);
+  fftw_free(output);
+  fftw_destroy_plan(plan);
+
+  // dump file
+  int mpi_tag = 0;
+  int size = 0;
+  int count_per_rank[nb_ranks];
+  int offsets[nb_ranks];
+  std::vector<float> spectrum;
+
+  MPI_Gather(&nb_freq, 1, MPI_INT, count_per_rank, 1, MPI_INT, 0, comm);
+
+  if (my_rank == 0) {
+    // compute data offsets and total size
+    offsets[0] = 0;
+    size = count_per_rank[0];
+    for (int i = 1; i < nb_ranks; ++i) {
+      offsets[i] = offsets[i - 1] + count_per_rank[i - 1];
+      size += count_per_rank[i];
+    }
+    // resize global magnitude array accordingly
+    spectrum.resize(size);
+  }
+
+  MPI_Gatherv(magnitude.data(), nb_freq, MPI_FLOAT, spectrum.data(), count_per_rank, offsets, MPI_FLOAT, 0, comm);
+
+  if (my_rank == 0) {
+    std::string path = "../../results/noising/power_spectrum.dat";
+    std::ofstream file(path, std::ios::out|std::ios::trunc);
+    assert(file.is_open());
+    assert(file.good());
+
+    for (int i = 0; i < size; ++i) {
+      file << i << "\t" << spectrum[i] << std::endl;
+    }
+
+    file.close();
+  }
+
+#else
+  std:cerr << "Warning: cannot compute noise spectral density without FFTW" << std::endl;
 #endif
+}
+
 
 /* -------------------------------------------------------------------------- */
 void Noising::run() {
@@ -316,19 +442,19 @@ void Noising::run() {
     // a) compute and apply noise on current dataset
     int const nb_particles = dataset[i].size();
     auto const noise = computeGaussianNoise(i);
-    for (int j = 0; j < nb_particles; ++j) {
-      dataset[i][j] += noise[j];
-    }
-    MPI_Barrier(comm);
-
-    // b) compute histogram only for first scalar
-    if (i == 0) {
-      computeHistogram(i, noise);
-      MPI_Barrier(comm);
-    }
+//    for (int j = 0; j < nb_particles; ++j) {
+//      dataset[i][j] += noise[j];
+//    }
+//    MPI_Barrier(comm);
+//
+//    // b) compute histogram only for first scalar
+//    if (i == 0) {
+//      computeHistogram(i, noise);
+//      MPI_Barrier(comm);
+//    }
 
     // c) compute signal spectrum
-    computePowerSpectrum(i);
+    computeSpectralDensity(noise);
     MPI_Barrier(comm);
   }
 

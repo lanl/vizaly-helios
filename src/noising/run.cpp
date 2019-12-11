@@ -43,10 +43,16 @@ int main(int argc, char* argv[]){
   MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &my_rank);
 
-  Noising kernel(argv[1], my_rank, nb_ranks, comm);
+#if HAVE_FFTW
+  fftw_mpi_init();
+#endif
 
-  // run the analyzer
+  Noising kernel(argv[1], my_rank, nb_ranks, comm);
   kernel.run();
+
+#if HAVE_FFTW
+  fftw_mpi_cleanup();
+#endif
 
   MPI_Finalize();
   return EXIT_SUCCESS;

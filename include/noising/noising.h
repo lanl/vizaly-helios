@@ -42,7 +42,7 @@
 #include "io/hacc.h"
 
 #if HAVE_FFTW
-  #include <fftw3.h>
+  #include <fftw3-mpi.h>
 #endif
 /* -------------------------------------------------------------------------- */
 class Noising {
@@ -61,9 +61,7 @@ private:
   // kernels
   std::vector<float> computeGaussianNoise(int field);
   bool computeHistogram(int i, std::vector<float> const& noise);
-#if HAVE_FFTW
-  void computePowerSpectrum(int field);
-#endif
+  void computeSpectralDensity(std::vector<float> const& noise);
 
   // IO
   size_t cache(long offset = 0);

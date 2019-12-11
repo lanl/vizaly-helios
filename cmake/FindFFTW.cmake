@@ -10,13 +10,14 @@ if (FFTW_INCLUDES)
   set (FFTW_FIND_QUIETLY TRUE)
 endif (FFTW_INCLUDES)
 
-find_path (FFTW_INCLUDES fftw3.h)
-find_path (FFTWF_INCLUDES fftw3.f03)
+find_path(FFTW_INCLUDES fftw3.h)
+find_path(FFTWF_INCLUDES fftw3.f03)
 
 find_library (FFTW_LIB NAMES fftw3)
+find_library (FFTW_MPI NAMES fftw3_mpi)
 find_library (FFTWF_LIB NAMES fftw3f)
 #
-set(FFTW_LIBRARIES ${FFTWF_LIB} ${FFTW_LIB})
+set(FFTW_LIBRARIES ${FFTWF_LIB} ${FFTW_LIB} ${FFTW_MPI})
 set(FFTWF_LIBRARIES ${FFTWF_LIB} ${FFTW_LIB})
 
 # handle the QUIETLY and REQUIRED arguments and set FFTW_FOUND to TRUE if

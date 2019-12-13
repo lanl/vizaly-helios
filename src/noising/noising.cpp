@@ -296,45 +296,48 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
   int total_size = 0;
   MPI_Allreduce(&local_size, &total_size, 1, MPI_INT, MPI_SUM, comm);
 
-
   fftw_plan plan;
-  fftw_complex *signal, *output;
+  fftw_complex *signal, *out;
 
   ptrdiff_t const n0 = total_size;
   ptrdiff_t local_alloc;
   ptrdiff_t local_ni, local_i_start;
-  ptrdiff_t local_no, local_o_start;
+  ptrdiff_t local_n0, local_0_start;
 
-
-  //fftw_complex data[local_size];
   // get local data size and allocate
   if (my_rank == 0)
     std::cout << "getting local data size ... ";
+
+  // for one-dimensional dataset, we cannot use custom partition blocks
+  // since data distribution is managed by fftw such that each rank receives
+  // block of perfectly equal size.
+  // hence we have to manually fix the mismatch between the actual data partition
+  // and that imposed by fftw by redistributing the excess per rank.
   local_alloc = fftw_mpi_local_size_1d(n0, comm,
                                        FFTW_FORWARD, FFTW_ESTIMATE,
                                        &local_ni, &local_i_start,
-                                       &local_no, &local_o_start);
+                                       &local_n0, &local_0_start);
   if (my_rank == 0)
-    std::cout << "done" << std::endl;
+    std::cout << "done" << std::endl << "allocating memory ... ";
 
-  if (my_rank == 0)
-    std::cout << "allocating memory ... ";
   signal = fftw_alloc_complex(local_alloc);
-  output = fftw_alloc_complex(local_alloc);
+  out = fftw_alloc_complex(local_alloc);
   MPI_Barrier(comm);
 
   if (my_rank == 0)
     std::cout << "done" << std::endl;
 
+  std::cout << "local_n0: "<< local_n0 << ", local_size: "<< local_size << std::endl;
+
   // create plan and copy dataset
   if (my_rank == 0)
     std::cout << "creating plan and copying dataset ... ";
 
-  plan = fftw_mpi_plan_dft_1d(n0, signal, output, comm, FFTW_FORWARD, FFTW_ESTIMATE);
+  plan = fftw_mpi_plan_dft_1d(n0, signal, out, comm, FFTW_FORWARD, FFTW_ESTIMATE);
 
-  for (int i = 0; i < local_size; ++i) {
+  for (int i = 0; i < local_n0; ++i) {
     signal[i][0] = noise[i];
-    signal[i][1] = 0;
+    signal[i][1] = 0.;
   }
 
   MPI_Barrier(comm);
@@ -379,11 +382,10 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
 
   // output result and finalize
   fftw_free(signal);
-  fftw_free(output);
+  fftw_free(out);
   fftw_destroy_plan(plan);
 
   // dump file
-  int mpi_tag = 0;
   int size = 0;
   int count_per_rank[nb_ranks];
   int offsets[nb_ranks];

@@ -362,17 +362,13 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
     std::cout << "compute power spectral density ... ";
 
   int const nb_freq = std::ceil(local_size / 2);
-  //int const nb_freq = local_size;
+
   std::vector<float> magnitude(nb_freq);
 
   for (int i = 0; i < nb_freq; ++i) {
-
-    real = output[i][0] / total_size;
-    imag = output[i][1] / total_size;
-    magnitude[i] = (real * real + imag * imag) / 2.;
-
-    if (my_rank == 0)
-      std::cout << "real="<< real <<", imag="<< imag <<", magnitude["<< i<<"]=" << magnitude[i] << std::endl;
+    real = out[i][0] / total_size;
+    imag = out[i][1] / total_size;
+    magnitude[i] = sqrt(real * real + imag * imag);
   }
 
   //magnitude[0] /= 2;
@@ -407,6 +403,25 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
 
   MPI_Gatherv(magnitude.data(), nb_freq, MPI_FLOAT, spectrum.data(), count_per_rank, offsets, MPI_FLOAT, 0, comm);
 
+
+  // compute the frequency
+  double local_max = std::numeric_limits<float>::min();
+  double local_min = std::numeric_limits<float>::max();
+  double total_max = 0;
+  double total_min = 0;
+
+  for (auto j=0; j < local_size; ++j) {
+    if (noise[j] > local_max) { local_max = noise[j]; }
+    if (noise[j] < local_min) { local_min = noise[j]; }
+  }
+
+  MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
+  MPI_Barrier(comm);
+
+  double const sampling_rate = 1./((total_max - total_min) / total_size);
+  std::cout << "sampling_rate: " << sampling_rate << std::endl;
+
   if (my_rank == 0) {
     std::string path = "../../results/noising/power_spectrum.dat";
     std::ofstream file(path, std::ios::out|std::ios::trunc);
@@ -414,10 +429,24 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
     assert(file.good());
 
     for (int i = 0; i < size; ++i) {
-      file << i << "\t" << spectrum[i] << std::endl;
+      file << i * sampling_rate / total_size << "\t" << spectrum[i] << std::endl;
     }
 
     file.close();
+
+    std::cout << "nb_ranks: "<< nb_ranks << std::endl;
+    if (nb_ranks == 1) {
+      // plot the raw noise data now
+      std::string data_path = "../../results/noising/noise.dat";
+      std::ofstream data_file(data_path, std::ios::out|std::ios::trunc);
+      assert(data_file.is_open());
+      assert(data_file.good());
+
+      for (int i = 0; i < size; ++i) {
+        data_file << i << "\t" << noise[i] << std::endl;
+      }
+      data_file.close();
+    }
   }
 
 #else

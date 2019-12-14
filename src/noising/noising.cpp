@@ -403,55 +403,67 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
 
   MPI_Gatherv(magnitude.data(), nb_freq, MPI_FLOAT, spectrum.data(), count_per_rank, offsets, MPI_FLOAT, 0, comm);
 
+  dumpPSD(noise, spectrum);
 
-  // compute the frequency
-  double local_max = std::numeric_limits<float>::min();
-  double local_min = std::numeric_limits<float>::max();
-  double total_max = 0;
-  double total_min = 0;
-
-  for (auto j=0; j < local_size; ++j) {
-    if (noise[j] > local_max) { local_max = noise[j]; }
-    if (noise[j] < local_min) { local_min = noise[j]; }
-  }
-
-  MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
-  MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
-  MPI_Barrier(comm);
-
-  double const sampling_rate = 1./((total_max - total_min) / total_size);
-  std::cout << "sampling_rate: " << sampling_rate << std::endl;
-
-  if (my_rank == 0) {
-    std::string path = "../../results/noising/power_spectrum.dat";
-    std::ofstream file(path, std::ios::out|std::ios::trunc);
-    assert(file.is_open());
-    assert(file.good());
-
-    for (int i = 0; i < size; ++i) {
-      file << i * sampling_rate / total_size << "\t" << spectrum[i] << std::endl;
-    }
-
-    file.close();
-
-    std::cout << "nb_ranks: "<< nb_ranks << std::endl;
-    if (nb_ranks == 1) {
-      // plot the raw noise data now
-      std::string data_path = "../../results/noising/noise.dat";
-      std::ofstream data_file(data_path, std::ios::out|std::ios::trunc);
-      assert(data_file.is_open());
-      assert(data_file.good());
-
-      for (int i = 0; i < size; ++i) {
-        data_file << i << "\t" << noise[i] << std::endl;
-      }
-      data_file.close();
-    }
-  }
+  debug_log << "done" << std::endl;
 
 #else
   std:cerr << "Warning: cannot compute noise spectral density without FFTW" << std::endl;
 #endif
+}
+
+/* -------------------------------------------------------------------------- */
+bool Noising::dumpPSD(std::vector<float> const &noise,
+                     std::vector<float> const& spectrum) const {
+
+  if (output_psd.empty())
+    return false;
+
+  int const local_size = noise.size();
+  int total_size = 0;
+  MPI_Reduce(&local_size, &total_size, 1, MPI_INT, MPI_SUM, 0, comm);
+
+  // compute the frequency
+  float local_max = std::numeric_limits<float>::min();
+  float local_min = std::numeric_limits<float>::max();
+  float total_max = 0;
+  float total_min = 0;
+
+  for (auto j=0; j < local_size; ++j) {
+    if (noise[j] > local_max) { local_max = noise[j]; continue; }
+    if (noise[j] < local_min) { local_min = noise[j]; continue; }
+  }
+
+  MPI_Allreduce(&local_max, &total_max, 1, MPI_FLOAT, MPI_MAX, comm);
+  MPI_Allreduce(&local_min, &total_min, 1, MPI_FLOAT, MPI_MIN, comm);
+  MPI_Barrier(comm);
+
+  if (my_rank == 0) {
+    // it differs for other ranks
+    int const size = spectrum.size();
+    double const range = total_max - total_min;
+    double const sampling_rate = total_size / range;
+
+    std::ofstream file(output_psd, std::ios::out|std::ios::trunc);
+    if (not file.good())
+      return false;
+
+    for (int i = 0; i < size; ++i)
+      file << i * sampling_rate / total_size << "\t" << spectrum[i] << std::endl;
+
+    if (nb_ranks == 1 and not output_raw.empty()) {
+      // plot the raw noise data now
+      file.close();
+      file.open(output_raw, std::ios::out|std::ios::trunc);
+      if (not file.good())
+        return false;
+
+      for (int i = 0; i < size; ++i) {
+        file << i << "\t" << noise[i] << std::endl;
+      }
+    }
+  }
+  return true;
 }
 
 
@@ -473,20 +485,20 @@ void Noising::run() {
     // a) compute and apply noise on current dataset
     int const nb_particles = dataset[i].size();
     auto const noise = computeGaussianNoise(i);
-//    for (int j = 0; j < nb_particles; ++j) {
-//      dataset[i][j] += noise[j];
-//    }
-//    MPI_Barrier(comm);
-//
-//    // b) compute histogram only for first scalar
-//    if (i == 0) {
-//      computeHistogram(i, noise);
-//      MPI_Barrier(comm);
-//    }
-
-    // c) compute signal spectrum
-    computeSpectralDensity(noise);
+    for (int j = 0; j < nb_particles; ++j) {
+      dataset[i][j] += noise[j];
+    }
     MPI_Barrier(comm);
+
+    // b) compute histogram only for first scalar
+    if (i == 0) {
+      computeHistogram(i, noise);
+      MPI_Barrier(comm);
+
+      // c) compute signal spectrum
+      computeSpectralDensity(redistribute(noise));
+      MPI_Barrier(comm);
+    }
   }
 
   // now dump everything

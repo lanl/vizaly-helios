@@ -62,18 +62,22 @@ private:
   std::vector<float> computeGaussianNoise(int field);
   bool computeHistogram(int i, std::vector<float> const& noise);
   void computeSpectralDensity(std::vector<float> const& noise);
+  std::vector<float> redistribute(std::vector<float> const& data) const;
 
   // IO
   size_t cache(long offset = 0);
   void dump();
   void dumpHistogram(int field);
   void dumpLogs();
+  bool dumpPSD(std::vector<float> const& noise, std::vector<float> const& spectrum) const;
 
   std::string json_path;
   std::string input;
   std::string output;
   std::string output_log;
   std::string output_plot;
+  std::string output_psd = "";
+  std::string output_raw = "";
   std::stringstream debug_log;
   std::unique_ptr<HACCDataLoader> ioMgr;
 

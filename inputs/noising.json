@@ -8,6 +8,8 @@
     "d_max":  1.0,
     "deviat": 0.4,
     "logs": "logs/log_noising",
-    "plots": "noise_distrib"
+    "plots": "noise_distrib",
+    "out-psd": "projects/exasky_data/hoby/analysis/data-noise_spectrum.dat",
+    "out-raw": "projects/exasky_data/hoby/analysis/data-noise_raw.dat"
   }
 }

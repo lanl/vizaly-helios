@@ -8,6 +8,8 @@
     "d_max":  1.0,
     "deviat": 0.4,
     "logs": "logs/log_noising",
-    "plots": "noise_distrib"
+    "plots": "noise_distrib",
+    "out-psd": "../../results/noising/power_spectrum.dat",
+    "out-raw": "../../results/noising/noise.dat"
   }
 }

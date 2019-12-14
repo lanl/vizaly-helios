@@ -66,6 +66,13 @@ Noising::Noising(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   output = json["noising"]["output"];
   output_log = json["noising"]["logs"];
   output_plot = json["noising"]["plots"];
+
+  if (json["noising"].count("out-raw"))
+    output_raw = json["noising"]["out-raw"];
+
+  if (json["noising"].count("out-psd"))
+    output_psd = json["noising"]["out-psd"];
+
   dist_min = json["noising"]["d_min"];
   dist_max = json["noising"]["d_max"];
   deviation = json["noising"]["deviat"];
@@ -290,8 +297,60 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
 }
 
 /* -------------------------------------------------------------------------- */
+std::vector<float> Noising::redistribute(std::vector<float> const& data) const {
+
+  int const local_size = data.size();
+  int total_size = 0;
+  int size_per_rank[nb_ranks];
+  int offsets[nb_ranks];
+  std::vector<float> gathered;
+  std::vector<float> result;
+
+  MPI_Allreduce(&local_size, &total_size, 1, MPI_INT, MPI_SUM, comm);
+  MPI_Gather(&local_size, 1, MPI_INT, size_per_rank, 1, MPI_INT, 0, comm);
+
+  if (my_rank == 0) {
+    gathered.resize(total_size);
+    offsets[0] = 0;
+    for (int i = 1; i < nb_ranks; ++i) {
+      offsets[i] = offsets[i - 1] + size_per_rank[i - 1];
+    }
+  }
+
+  MPI_Gatherv(data.data(), local_size, MPI_FLOAT, gathered.data(), size_per_rank, offsets, MPI_FLOAT, 0, comm);
+
+  if (total_size % nb_ranks == 0) {
+    int const block_size = static_cast<int>(total_size / nb_ranks);
+    result.resize(block_size);
+    MPI_Scatter(gathered.data(), block_size, MPI_FLOAT, result.data(), block_size, MPI_FLOAT, 0, comm);
+  } else {
+    int const last_rank = nb_ranks - 1;
+    auto const count = std::floor(double(total_size) / nb_ranks);
+    int const block_size = static_cast<int>(my_rank == last_rank ? count + 1 : count);
+    result.resize(block_size);
+
+    if (my_rank == 0) {
+      offsets[0] = 0;
+      size_per_rank[0] = 0;
+      for (int i = 1; i < nb_ranks; ++i) {
+        size_per_rank[i] = block_size;
+        offsets[i] = offsets[i - 1] + block_size;
+      }
+      size_per_rank[last_rank]++;
+    }
+
+    MPI_Scatterv(gathered.data(), size_per_rank, offsets, MPI_FLOAT, result.data(), block_size, MPI_FLOAT, 0, comm);
+  }
+
+  return result;
+}
+
+/* -------------------------------------------------------------------------- */
 void Noising::computeSpectralDensity(std::vector<float> const& noise) {
 #if HAVE_FFTW
+
+  debug_log << "Computing power spectral density ... ";
+
   int local_size = noise.size();
   int total_size = 0;
   MPI_Allreduce(&local_size, &total_size, 1, MPI_INT, MPI_SUM, comm);
@@ -305,10 +364,7 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
   ptrdiff_t local_n0, local_0_start;
 
   // get local data size and allocate
-  if (my_rank == 0)
-    std::cout << "getting local data size ... ";
-
-  // for one-dimensional dataset, we cannot use custom partition blocks
+  // for one-dimensional data, we cannot use custom partition blocks
   // since data distribution is managed by fftw such that each rank receives
   // block of perfectly equal size.
   // hence we have to manually fix the mismatch between the actual data partition
@@ -317,22 +373,13 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
                                        FFTW_FORWARD, FFTW_ESTIMATE,
                                        &local_ni, &local_i_start,
                                        &local_n0, &local_0_start);
-  if (my_rank == 0)
-    std::cout << "done" << std::endl << "allocating memory ... ";
 
+  assert(local_n0 == local_size);
   signal = fftw_alloc_complex(local_alloc);
   out = fftw_alloc_complex(local_alloc);
   MPI_Barrier(comm);
 
-  if (my_rank == 0)
-    std::cout << "done" << std::endl;
-
-  std::cout << "local_n0: "<< local_n0 << ", local_size: "<< local_size << std::endl;
-
   // create plan and copy dataset
-  if (my_rank == 0)
-    std::cout << "creating plan and copying dataset ... ";
-
   plan = fftw_mpi_plan_dft_1d(n0, signal, out, comm, FFTW_FORWARD, FFTW_ESTIMATE);
 
   for (int i = 0; i < local_n0; ++i) {
@@ -341,25 +388,15 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
   }
 
   MPI_Barrier(comm);
-  if (my_rank == 0)
-    std::cout << "done" << std::endl;
 
   // compute discrete fourier transform
-  if (my_rank == 0)
-    std::cout << "compute discrete fourier transform ... ";
   fftw_execute(plan);
-
   MPI_Barrier(comm);
-  if (my_rank == 0)
-    std::cout << "done" << std::endl;
+
 
   // compute power spectral density
   double real = 0;
   double imag = 0;
-
-
-  if (my_rank == 0)
-    std::cout << "compute power spectral density ... ";
 
   int const nb_freq = std::ceil(local_size / 2);
 
@@ -371,10 +408,7 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
     magnitude[i] = sqrt(real * real + imag * imag);
   }
 
-  //magnitude[0] /= 2;
   MPI_Barrier(comm);
-  if (my_rank == 0)
-    std::cout << "done" << std::endl;
 
   // output result and finalize
   fftw_free(signal);

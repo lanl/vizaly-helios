@@ -513,28 +513,23 @@ void Noising::run() {
 
   for (int i = 0; i < num_scalars; ++i) {
 
-//    // a) compute and apply noise on current dataset
-//    int const nb_particles = dataset[i].size();
-//    auto const noise = computeGaussianNoise(i);
-//    for (int j = 0; j < nb_particles; ++j) {
-//      dataset[i][j] += noise[j];
-//    }
-//    MPI_Barrier(comm);
-//
-//    // b) compute histogram only for first scalar
-//    if (i == 0) {
-//      computeHistogram(i, noise);
-//      MPI_Barrier(comm);
-//
-//      // c) compute signal spectrum
-//      computeSpectralDensity(redistribute(noise));
-//      MPI_Barrier(comm);
-//    }
-    float total_min = 0.;
-    float total_max = 0.;
-    std::tie(total_min, total_max) = getRange(dataset[i]);
-    if (my_rank == 0)
-      std::cout << scalars[i] <<": total_min: "<< total_min <<", total_max: "<< total_max << std::endl;
+    // a) compute and apply noise on current dataset
+    int const nb_particles = dataset[i].size();
+    auto const noise = computeGaussianNoise(i);
+    for (int j = 0; j < nb_particles; ++j) {
+      dataset[i][j] += noise[j];
+    }
+    MPI_Barrier(comm);
+
+    // b) compute histogram only for first scalar
+    if (i == 0) {
+      computeHistogram(i, noise);
+      MPI_Barrier(comm);
+
+      // c) compute signal spectrum
+      computeSpectralDensity(redistribute(noise));
+      MPI_Barrier(comm);
+    }
   }
 
   // now dump everything

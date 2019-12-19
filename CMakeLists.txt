@@ -133,7 +133,7 @@ target_link_libraries(combine PRIVATE gio)
 target_link_libraries(noising PRIVATE gio)
 
 # link to fftw
-find_package(fftw)
+find_package(FFTW)
 if (FFTW_FOUND)
 	target_include_directories(noising PRIVATE ${FFTW_INCLUDES})
 	target_link_libraries(noising PRIVATE ${FFTW_LIBRARIES})

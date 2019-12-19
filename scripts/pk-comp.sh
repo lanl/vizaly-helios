@@ -7,8 +7,8 @@
 
 HACC="/projects/exasky/HACC"
 POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
-PARTICLES_DATA="/projects/exasky_data/hoby/analysis/data-full-noised"
-OUTPUT_DATA="/projects/exasky_data/hoby/analysis/pk-noised.dat"
+PARTICLES_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-full-noised"
+OUTPUT_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-noised.dat"
 TIMESTEP=499
 
 # shellcheck disable=SC1090

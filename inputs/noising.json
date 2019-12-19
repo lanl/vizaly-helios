@@ -2,14 +2,14 @@
   "noising": {
     "type": "gaussian",
     "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
-    "output":"/projects/exasky_data/hoby/analysis/data-full-noised",
+    "output":"/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-full-noised",
     "scalars":["x", "y", "z", "vx", "vy", "vz"],
     "d_min": -1.0,
     "d_max":  1.0,
     "deviat": 0.4,
     "logs": "logs/log_noising",
     "plots": "noise_distrib",
-    "out-psd": "projects/exasky_data/hoby/analysis/data-noise_spectrum.dat",
-    "out-raw": "projects/exasky_data/hoby/analysis/data-noise_raw.dat"
+    "out-psd": "/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-noise_spectrum.dat",
+    "out-raw": "/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-noise_raw.dat"
   }
 }

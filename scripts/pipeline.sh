@@ -19,8 +19,8 @@ HACC="/projects/exasky/HACC"
 BUILD="/projects/exasky/hoby-projects/helios/build"
 INPUT_JSON="../inputs/hacc/analysis_pipeline${SUFFIX}.json"
 POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
-PARTICLES_DATA="/projects/exasky_data/hoby/analysis/data-combined-zip${SUFFIX}.dat"
-OUTPUT_DATA="/projects/exasky_data/hoby/analysis/pk-combined-zip${SUFFIX}.dat"
+PARTICLES_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-combined-zip${SUFFIX}.dat"
+OUTPUT_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-combined-zip${SUFFIX}.dat"
 
 # extract non-halos and compute entropy if required
 if ${EXTRACT_NON_HALOS}; then

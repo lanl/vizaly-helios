@@ -527,8 +527,8 @@ void Noising::run() {
       MPI_Barrier(comm);
 
       // c) compute signal spectrum
-      computeSpectralDensity(redistribute(noise));
-      MPI_Barrier(comm);
+      //computeSpectralDensity(redistribute(noise));
+      //MPI_Barrier(comm);
     }
   }
 

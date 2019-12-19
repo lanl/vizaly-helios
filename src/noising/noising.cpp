@@ -442,7 +442,7 @@ void Noising::computeSpectralDensity(std::vector<float> const& noise) {
   debug_log << "done" << std::endl;
 
 #else
-  std:cerr << "Warning: cannot compute noise spectral density without FFTW" << std::endl;
+  std::cerr << "Warning: cannot compute noise spectral density without FFTW" << std::endl;
 #endif
 }
 

@@ -14,10 +14,10 @@ find_path(FFTW_INCLUDES fftw3.h
         HINTS "/projects/opt/centos7/fftw/3.3.4/include")
 
 find_library(FFTW_LIB
-        NAMES libfftw3.a
+        NAMES fftw3
         PATHS "/projects/opt/centos7/fftw/3.3.4/lib")
 find_library(FFTW_MPI
-        NAMES libfftw3_mpi.a
+        NAMES fftw3_mpi
         PATHS "/projects/opt/centos7/fftw/3.3.4/lib")
 
 set(FFTW_LIBRARIES ${FFTW_LIB} ${FFTW_MPI})

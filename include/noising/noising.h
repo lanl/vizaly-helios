@@ -63,6 +63,7 @@ private:
   bool computeHistogram(int i, std::vector<float> const& noise);
   void computeSpectralDensity(std::vector<float> const& noise);
   std::vector<float> redistribute(std::vector<float> const& data) const;
+  std::pair<float,float> getRange(std::vector<float> const& data) const;
 
   // IO
   size_t cache(long offset = 0);

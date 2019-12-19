@@ -243,28 +243,17 @@ bool Noising::computeHistogram(int i, std::vector<float> const& noise) {
   debug_log << "using "<< num_bins << " bins ... ";
 
   // step 1. determine lower and upper bounds on data
-  double local_max = std::numeric_limits<float>::min();
-  double local_min = std::numeric_limits<float>::max();
-  double total_max = 0;
-  double total_min = 0;
-
-  for (auto j=0; j < nb_particles; ++j) {
-    if (noise[j] > local_max) { local_max = noise[j]; }
-    if (noise[j] < local_min) { local_min = noise[j]; }
-  }
-
-  MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
-  MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
-  MPI_Barrier(comm);
+  float total_min = 0.;
+  float total_max = 0.;
+  std::tie(total_min, total_max) = getRange(noise);
 
   long local_histo[num_bins];
   long total_histo[num_bins];
-
   std::fill(local_histo, local_histo + num_bins, 0);
   std::fill(total_histo, total_histo + num_bins, 0);
 
-  double range = total_max - total_min;
-  double capacity = range / num_bins;
+  double const range = total_max - total_min;
+  double const capacity = range / num_bins;
 
   for (auto k=0; k < nb_particles; ++k) {
     int index = static_cast<int>((noise[k] - total_min) / capacity);
@@ -458,19 +447,9 @@ bool Noising::dumpPSD(std::vector<float> const &noise,
   MPI_Reduce(&local_size, &total_size, 1, MPI_INT, MPI_SUM, 0, comm);
 
   // compute the frequency
-  float local_max = std::numeric_limits<float>::min();
-  float local_min = std::numeric_limits<float>::max();
-  float total_max = 0;
-  float total_min = 0;
-
-  for (auto j=0; j < local_size; ++j) {
-    if (noise[j] > local_max) { local_max = noise[j]; continue; }
-    if (noise[j] < local_min) { local_min = noise[j]; continue; }
-  }
-
-  MPI_Allreduce(&local_max, &total_max, 1, MPI_FLOAT, MPI_MAX, comm);
-  MPI_Allreduce(&local_min, &total_min, 1, MPI_FLOAT, MPI_MIN, comm);
-  MPI_Barrier(comm);
+  float total_min = 0.;
+  float total_max = 0.;
+  std::tie(total_min, total_max) = getRange(noise);
 
   if (my_rank == 0) {
     // it differs for other ranks
@@ -500,7 +479,25 @@ bool Noising::dumpPSD(std::vector<float> const &noise,
   return true;
 }
 
+/* -------------------------------------------------------------------------- */
+std::pair<float,float> Noising::getRange(std::vector<float> const& data) const {
 
+  float local_max = std::numeric_limits<float>::min();
+  float local_min = std::numeric_limits<float>::max();
+  float total_max = 0;
+  float total_min = 0;
+
+  int const local_size = data.size();
+  for (auto j=0; j < local_size; ++j) {
+    if (data[j] > local_max) { local_max = data[j]; continue; }
+    if (data[j] < local_min) { local_min = data[j]; continue; }
+  }
+
+  MPI_Allreduce(&local_min, &total_min, 1, MPI_FLOAT, MPI_MIN, comm);
+  MPI_Allreduce(&local_max, &total_max, 1, MPI_FLOAT, MPI_MAX, comm);
+
+  return std::make_pair(total_min, total_max);
+}
 /* -------------------------------------------------------------------------- */
 void Noising::run() {
 
@@ -516,23 +513,28 @@ void Noising::run() {
 
   for (int i = 0; i < num_scalars; ++i) {
 
-    // a) compute and apply noise on current dataset
-    int const nb_particles = dataset[i].size();
-    auto const noise = computeGaussianNoise(i);
-    for (int j = 0; j < nb_particles; ++j) {
-      dataset[i][j] += noise[j];
-    }
-    MPI_Barrier(comm);
-
-    // b) compute histogram only for first scalar
-    if (i == 0) {
-      computeHistogram(i, noise);
-      MPI_Barrier(comm);
-
-      // c) compute signal spectrum
-      computeSpectralDensity(redistribute(noise));
-      MPI_Barrier(comm);
-    }
+//    // a) compute and apply noise on current dataset
+//    int const nb_particles = dataset[i].size();
+//    auto const noise = computeGaussianNoise(i);
+//    for (int j = 0; j < nb_particles; ++j) {
+//      dataset[i][j] += noise[j];
+//    }
+//    MPI_Barrier(comm);
+//
+//    // b) compute histogram only for first scalar
+//    if (i == 0) {
+//      computeHistogram(i, noise);
+//      MPI_Barrier(comm);
+//
+//      // c) compute signal spectrum
+//      computeSpectralDensity(redistribute(noise));
+//      MPI_Barrier(comm);
+//    }
+    float total_min = 0.;
+    float total_max = 0.;
+    std::tie(total_min, total_max) = getRange(dataset[i]);
+    if (my_rank == 0)
+      std::cout << scalars[i] <<": total_min: "<< total_min <<", total_max: "<< total_max << std::endl;
   }
 
   // now dump everything

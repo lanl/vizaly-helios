@@ -12,5 +12,5 @@ OUTPUT_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-full.
 TIMESTEP=499
 
 # shellcheck disable=SC1090
-source "${HACC}.darwin_setup" && cd "${HACC}/run" &&
+source "${HACC}/HACC.darwin_setup" && cd "${HACC}/run" &&
 mpirun ${POWER_SPECTRUM} inputs/indat.params -n ${PARTICLES_DATA} ${OUTPUT_DATA} ${TIMESTEP}

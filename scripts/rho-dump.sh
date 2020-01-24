@@ -3,7 +3,7 @@
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 1
 #SBATCH --partition scaling
-#SBATCH --job-name spectrum
+#SBATCH --job-name density
 
 HACC="/home/hoby/dev/exasky/hacc"
 POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"

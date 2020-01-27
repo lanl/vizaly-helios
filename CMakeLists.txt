@@ -86,6 +86,7 @@ target_sources(analysis PRIVATE
 		src/io/data.cpp
 		src/io/hacc.cpp
 		src/analysis/analyzer.cpp
+		src/analysis/density.cpp
 		src/analysis/run.cpp)
 
 target_sources(combine PRIVATE

@@ -101,8 +101,10 @@ bool Density::load(std::string const& path, long count, long offset) {
   debug_log << "Loading density file ... " << std::flush;
 
   auto buffer = reinterpret_cast<char*>(density.data() + offset);
+  auto size = count * sizeof(float);
+
   file.seekg(0, std::ios::beg);
-  file.read(buffer, count * sizeof(float));
+  file.read(buffer, size);
   file.close();
 
   debug_log << "done" << std::endl;

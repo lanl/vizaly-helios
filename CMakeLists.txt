@@ -195,5 +195,5 @@ if (ENABLE_ZFP)
 endif()
 
 # install instructions
-install(TARGETS analysis compress combine gio DESTINATION .)
+install(TARGETS analysis compress combine density gio DESTINATION .)
 

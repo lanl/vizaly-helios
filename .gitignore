@@ -1,3 +1,5 @@
 build
 .idea
 travis
+inputs/*.raw
+inputs/*.xml

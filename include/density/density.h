@@ -61,7 +61,6 @@ private:
   // IO
   std::string json_path;
   std::vector<std::pair<std::string,long>> inputs;    // local to this rank
-  std::string output_log;
   std::string output_plot;
 
   // histogram

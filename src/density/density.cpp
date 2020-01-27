@@ -53,7 +53,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));
   assert(json["density"].count("nb_bins"));
-  assert(json["density"].count("logs"));
   assert(json["density"].count("plots"));
 
   // dispatch files to MPI ranks
@@ -81,7 +80,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   } else
     throw std::runtime_error("mismatch on number of ranks and data partition");
 
-  output_log = json["density"]["logs"];
   output_plot = json["density"]["plots"];
   nb_bins = json["density"]["nb_bins"];
   assert(nb_bins > 0);

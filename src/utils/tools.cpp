@@ -135,6 +135,7 @@ bool valid(int argc, char **argv, int rank, int nb_ranks) {
     return false;
   }
 
+  /*
   // check if powers of 2 number of ranks
   if (json["compress"]["output"].count("dump")) {
     if (not isPowerOfTwo(nb_ranks)) {
@@ -144,7 +145,7 @@ bool valid(int argc, char **argv, int rank, int nb_ranks) {
       }
       return false;
     }
-  }
+  }*/
 
   return true;
 }

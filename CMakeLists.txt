@@ -57,11 +57,13 @@ add_executable(compress)
 add_executable(analysis)
 add_executable(combine)
 add_executable(noising)
+add_executable(density)
 
 target_include_directories(compress PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(analysis PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(combine  PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(noising  PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(density  PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_sources(compress PRIVATE
 		src/utils/tools.cpp
@@ -86,7 +88,6 @@ target_sources(analysis PRIVATE
 		src/io/data.cpp
 		src/io/hacc.cpp
 		src/analysis/analyzer.cpp
-		src/analysis/density.cpp
 		src/analysis/run.cpp)
 
 target_sources(combine PRIVATE
@@ -104,6 +105,14 @@ target_sources(noising PRIVATE
 		src/io/hacc.cpp
 		src/noising/noising.cpp
 		src/noising/run.cpp)
+
+target_sources(density PRIVATE
+		src/utils/tools.cpp
+		src/utils/memory.cpp
+		src/io/data.cpp
+		src/io/hacc.cpp
+		src/density/density.cpp
+		src/density/run.cpp)
 
 # hacc data io
 add_library(gio STATIC)
@@ -132,6 +141,7 @@ target_link_libraries(compress PRIVATE gio)
 target_link_libraries(analysis PRIVATE gio)
 target_link_libraries(combine PRIVATE gio)
 target_link_libraries(noising PRIVATE gio)
+target_link_libraries(density PRIVATE gio)
 
 # link to fftw
 find_package(FFTW)

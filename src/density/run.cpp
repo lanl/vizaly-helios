@@ -29,5 +29,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "analysis/density.h"
+#include "density/density.h"
+/* -------------------------------------------------------------------------- */
+int main(int argc, char* argv[]){
+
+  int my_rank = 0;
+  int nb_ranks = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  // init MPI
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(comm, &nb_ranks);
+  MPI_Comm_rank(comm, &my_rank);
+
+  // basic input checks
+  if (not tools::valid(argc, argv, my_rank, nb_ranks)) {
+    MPI_Finalize();
+    return EXIT_FAILURE;
+  }
+
+  // everything is OK at this point
+  Density density(argv[1], my_rank, nb_ranks, comm);
+
+  // run the analyzer
+  density.run();
+
+  MPI_Finalize();
+  return EXIT_SUCCESS;
+}
 /* -------------------------------------------------------------------------- */

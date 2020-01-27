@@ -160,12 +160,11 @@ void Density::computeFrequencies() {
   MPI_Allreduce(local_histo, total_histo, nb_bins, MPI_LONG, MPI_SUM, comm);
 
   if (my_rank == 0) {
-
     dumpHistogram();
-
     std::cout << "done." << std::endl;
-    std::cout << "\tbins: " << nb_bins << std::endl;
-    std::cout << "\t(min, max): (" << total_min << ", " << total_max << ")"<< std::endl;
+    std::cout << "= histogram: '" << output_plot << ".dat'" << std::endl;
+    std::cout << "= number of bins: " << nb_bins << std::endl;
+    std::cout << "= (min, max): (" << total_min << ", " << total_max << ")"<< std::endl;
   }
 
   MPI_Barrier(comm);
@@ -186,8 +185,7 @@ void Density::dumpHistogram() {
 
   int k = 1;
   for (auto&& value : histo) {
-    file << std::setw(10) << std::setprecision(4) << total_min + (k * width)
-         << "\t"<< value << std::endl;
+    file << total_min + (k * width) << "\t"<< value << std::endl;
     k++;
   }
 

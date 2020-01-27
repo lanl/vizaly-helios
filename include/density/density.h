@@ -50,15 +50,14 @@ public:
   Density(Density&&) noexcept = delete;
   ~Density() = default;
 
-  bool run();
+  void run();
 
 private:
 
   bool load(std::string const& path, long count, long offset = 0);
-  bool computeFrequencies(int i, float* data);
-  void filterParticles();
+  bool computeFrequencies();
   void dumpLogs();
-  void generateHistogram();
+  void dumpHistogram();
 
   // IO
   std::string json_path;
@@ -73,6 +72,8 @@ private:
   int nb_bins = 0;
   long local_count = 0;
   long total_count = 0;
+  double total_min = 0.;
+  double total_max = 0.;
 
   std::vector<double> frequency;
   std::vector<float> density;

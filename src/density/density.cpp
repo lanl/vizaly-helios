@@ -52,21 +52,31 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"].count("extents"));
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));
-  assert(json["density"].count("num_bins"));
+  assert(json["density"].count("nb_bins"));
   assert(json["density"].count("logs"));
   assert(json["density"].count("plots"));
 
-  for (auto const& path : json["density"]["inputs"])
-    inputs.emplace_back(path);
+  // dispatch files to MPI ranks
+  int partition_size = json["density"]["inputs"].size();
+  bool rank_mismatch = (partition_size < nb_ranks) or (partition_size % nb_ranks != 0);
 
-  int const partition_size = inputs.size();
-  if (nb_ranks > 1 and partition_size % nb_ranks != 0)
-    throw std::runtime_error("incompatible number of ranks and data partition");
+  if (nb_ranks == 1 or not rank_mismatch) {
+    int offset = static_cast<int>(partition_size / nb_ranks);
+    assert(offset);
+
+    for (int i = 0; i < offset; ++i) {
+      int index = i + my_rank * offset;
+      inputs.emplace_back(json["density"]["inputs"][index]);
+      std::cout << "rank["<< my_rank <<"]: "<< inputs.back() << std::endl;
+    }
+
+  } else
+    throw std::runtime_error("mismatch on number of ranks and data partition");
 
   output_log = json["density"]["logs"];
   output_plot = json["density"]["plots"];
-  num_bins = json["density"]["num_bins"];
-  assert(num_bins > 0);
+  nb_bins = json["density"]["nb_bins"];
+  assert(nb_bins > 0);
 
   extents[0] = json["density"]["extents"]["min"];
   extents[1] = json["density"]["extents"]["max"];
@@ -93,8 +103,7 @@ bool Density::load(std::string path, int offset) {
 /* -------------------------------------------------------------------------- */
 bool Density::run() {
 
-
-
-
+  // TODO
+  return false;
 }
 /* -------------------------------------------------------------------------- */

@@ -48,12 +48,20 @@ int main(int argc, char* argv[]){
     return EXIT_FAILURE;
   }
 
-  // everything is OK at this point
-  Density density(argv[1], my_rank, nb_ranks, comm);
+  try {
+    Density density(argv[1], my_rank, nb_ranks, comm);
 
-  // run the analyzer
-  density.run();
+    // run the analyzer
+    density.run();
+  } catch (std::exception& exception) {
+    // something went wrong
+    if (my_rank == 0)
+      std::cerr << "Error: " << exception.what() << std::endl;
+    MPI_Finalize();
+    return EXIT_FAILURE;
+  }
 
+  // everything was ok
   MPI_Finalize();
   return EXIT_SUCCESS;
 }

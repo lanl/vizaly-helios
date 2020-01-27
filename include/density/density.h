@@ -61,7 +61,7 @@ private:
 
   // IO
   std::string json_path;
-  std::vector<std::string> inputs;
+  std::vector<std::string> inputs;    // local to this rank
   std::string output_log;
   std::string output_plot;
   std::stringstream debug_log;
@@ -69,7 +69,7 @@ private:
   int extents[2] = {0, 0};
 
   // histogram
-  int num_bins = 0;
+  int nb_bins = 0;
   long local_count = 0;
   long total_count = 0;
 

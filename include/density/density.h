@@ -54,7 +54,7 @@ public:
 
 private:
 
-  bool load(std::string const& path, long count, long offset = 0);
+  bool loadFiles();
   bool computeFrequencies();
   void dumpLogs();
   void dumpHistogram();

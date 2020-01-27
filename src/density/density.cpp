@@ -95,23 +95,34 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 }
 
 /* -------------------------------------------------------------------------- */
-bool Density::load(std::string const& path, long count, long offset) {
-
-  std::ifstream file(path, std::ios::binary);
-  if (not file.good())
-    return false;
+bool Density::loadFiles() {
 
   debug_log << "Loading density values ... " << std::flush;
 
-  auto buffer = reinterpret_cast<char*>(density.data() + offset);
-  auto size = count * sizeof(float);
+  long offset = 0;
+  long count = 0;
+  std::string path;
 
-  file.seekg(0, std::ios::beg);
-  file.read(buffer, size);
-  file.close();
+  for (auto&& current : inputs) {
+    std::tie(path, count) = current;
+
+    std::ifstream file(path, std::ios::binary);
+    if (not file.good())
+      return false;
+
+    auto buffer = reinterpret_cast<char *>(density.data() + offset);
+    auto size = count * sizeof(float);
+
+    file.seekg(0, std::ios::beg);
+    file.read(buffer, size);
+    file.close();
+
+    // update offset
+    offset += count;
+  }
 
   debug_log << density.size() << " values loaded." << std::endl;
-  return true;
+  return not density.empty();
 }
 
 
@@ -124,10 +135,10 @@ bool Density::computeFrequencies() {
     return false;
 
   // determine data values extents
-  double local_min = *std::min_element(density.data(), density.data()+local_count);
-  double local_max = *std::max_element(density.data(), density.data()+local_count);
   total_max = 0;
   total_min = 0;
+  double local_min = *std::min_element(density.data(), density.data()+local_count);
+  double local_max = *std::max_element(density.data(), density.data()+local_count);
   MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
   MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
 
@@ -169,7 +180,7 @@ bool Density::computeFrequencies() {
   // normalize and store data
   double total_values = 0.;
   for (int i = 0; i < nb_bins; ++i)
-    total_values += total_histo[i];
+    total_values += static_cast<double>(total_histo[i]);
 
   for (int i = 0; i < nb_bins; ++i)
     frequency[i] = 100. * static_cast<double>(total_histo[i]) / total_values;
@@ -188,7 +199,7 @@ void Density::dumpHistogram() {
 
   double const width = (total_max - total_min) / static_cast<double>(nb_bins);
 
-  std::ofstream file(output_plot + ".dat", std::ios::out|std::ios::trunc);
+  std::ofstream file(output_plot + ".dat", std::ios::trunc);
   assert(file.is_open());
   assert(file.good());
 
@@ -211,20 +222,7 @@ void Density::run() {
   debug_log.str("");
 
   // step 1: load current rank dataset in memory
-  long offset = 0;
-  for (auto&& current : inputs) {
-    auto&& path = current.first;
-    auto&& count = current.second;
-    load(path, count, offset);
-    local_count += offset;
-  }
-
-
-#if DEBUG
-  for (float const& value : density) {
-    std::cout << "rank["<< my_rank <<"]: density = "<< value << std::endl;
-  }
-#endif
+  loadFiles();
 
   // step 2: compute frequencies and histogram
   computeFrequencies();

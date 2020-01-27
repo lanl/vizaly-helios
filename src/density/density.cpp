@@ -69,13 +69,12 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
       int index = i + my_rank * offset;
       auto&& current = json["density"]["inputs"][index];
       inputs.emplace_back(current["data"], current["count"]);
-      std::cout << "["<< my_rank <<"]: \""<< inputs.back().first << "\""<< std::endl;
+      std::cout << "rank["<< my_rank <<"]: \""<< inputs.back().first << "\""<< std::endl;
       local_count += inputs.back().second;
     }
 
     // resize buffer
     density.resize(local_count);
-    //density.resize(4 * offset);
     // retrieve the total number of elems
     MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
 
@@ -86,18 +85,18 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   output_plot = json["density"]["plots"];
   nb_bins = json["density"]["nb_bins"];
   assert(nb_bins > 0);
+  histo.resize(nb_bins);
 
   extents[0] = json["density"]["extents"]["min"];
   extents[1] = json["density"]["extents"]["max"];
   assert(extents[0] < extents[1]);
-
-  histo.clear();
 }
 
 /* -------------------------------------------------------------------------- */
 bool Density::loadFiles() {
 
-  debug_log << "Loading density values ... " << std::flush;
+  if (my_rank == 0)
+    std::cout << "Loading density values ... " << std::flush;
 
   long offset = 0;
   long count = 0;
@@ -121,18 +120,20 @@ bool Density::loadFiles() {
     offset += count;
   }
 
-  debug_log << density.size() << " values loaded." << std::endl;
+  if (my_rank == 0)
+    std::cout << "done." << std::endl;
   return not density.empty();
 }
 
 
 /* -------------------------------------------------------------------------- */
-bool Density::computeFrequencies() {
+void Density::computeFrequencies() {
 
-  debug_log << "Computing frequencies ... " << std::endl;
+  if (my_rank == 0)
+    std::cout << "Computing frequencies ... " << std::flush;
 
-  if (not local_count or not total_count)
-    return false;
+  assert(local_count);
+  assert(total_count);
 
   // determine data values extents
   total_max = 0;
@@ -142,18 +143,9 @@ bool Density::computeFrequencies() {
   MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
   MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
 
-  debug_log << "= local_extents: [" << local_min << ", " << local_max << "]"<< std::endl;
-  debug_log << "= total_extents: [" << total_min << ", " << total_max << "]"<< std::endl;
-  MPI_Barrier(comm);
-
-  if (total_max <= 0.0)
-    return false;
-
   // compute histogram of values
-  debug_log << "nb_bins: " << nb_bins << std::endl;
-
   long local_histo[nb_bins];
-  long total_histo[nb_bins];
+  auto total_histo = histo.data();
 
   std::fill(local_histo, local_histo + nb_bins, 0);
   std::fill(total_histo, total_histo + nb_bins, 0);
@@ -173,25 +165,16 @@ bool Density::computeFrequencies() {
 
   MPI_Allreduce(local_histo, total_histo, nb_bins, MPI_LONG, MPI_SUM, comm);
 
-  // fill frequency eventually
-  frequency.clear();
-  frequency.resize(nb_bins);
+  if (my_rank == 0) {
 
-  // normalize and store data
-  double total_values = 0.;
-  for (int i = 0; i < nb_bins; ++i)
-    total_values += static_cast<double>(total_histo[i]);
-
-  for (int i = 0; i < nb_bins; ++i)
-    frequency[i] = 100. * static_cast<double>(total_histo[i]) / total_values;
-
-  if (my_rank == 0)
     dumpHistogram();
 
-  MPI_Barrier(comm);
-  debug_log << "done" << std::endl;
+    std::cout << "done." << std::endl;
+    std::cout << "\tbins: " << nb_bins << std::endl;
+    std::cout << "\t(min, max): (" << total_min << ", " << total_max << ")"<< std::endl;
+  }
 
-  return true;
+  MPI_Barrier(comm);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -203,12 +186,14 @@ void Density::dumpHistogram() {
   assert(file.is_open());
   assert(file.good());
 
-  file << "# density field histogram" << std::endl;
-  file << "# nb_bins: " << std::to_string(nb_bins) << std::endl;
+  file << "# bins: " << std::to_string(nb_bins) << std::endl;
+  file << "# col 1: density range" << std::endl;
+  file << "# col 2: particle count" << std::endl;
 
   int k = 1;
-  for (auto&& value : frequency) {
-    file << total_min + (k * width) << "\t"<< value << std::endl;
+  for (auto&& value : histo) {
+    file << std::setw(10) << std::setprecision(4) << total_min + (k * width)
+         << "\t"<< value << std::endl;
     k++;
   }
 
@@ -218,30 +203,11 @@ void Density::dumpHistogram() {
 /* -------------------------------------------------------------------------- */
 void Density::run() {
 
-  debug_log.clear();
-  debug_log.str("");
-
   // step 1: load current rank dataset in memory
   loadFiles();
 
   // step 2: compute frequencies and histogram
   computeFrequencies();
-
-  if (my_rank == 0)
-    dumpLogs();
 }
 
-/* -------------------------------------------------------------------------- */
-
-void Density::dumpLogs() {
-
-  std::ofstream logfile(output_log, std::ios::out);
-  logfile << debug_log.str();
-  logfile.close();
-  std::cout << "Logs generated in "<< output_log << std::endl;
-
-  debug_log.clear();
-  debug_log.str("");
-  MPI_Barrier(comm);
-}
 /* -------------------------------------------------------------------------- */

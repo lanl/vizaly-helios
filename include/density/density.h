@@ -55,7 +55,7 @@ public:
 private:
 
   bool loadFiles();
-  bool computeFrequencies();
+  void computeFrequencies();
   void dumpLogs();
   void dumpHistogram();
 
@@ -64,7 +64,6 @@ private:
   std::vector<std::pair<std::string,long>> inputs;    // local to this rank
   std::string output_log;
   std::string output_plot;
-  std::stringstream debug_log;
 
   int extents[2] = {0, 0};
 
@@ -75,9 +74,8 @@ private:
   double total_min = 0.;
   double total_max = 0.;
 
-  std::vector<double> frequency;
   std::vector<float> density;
-  std::vector<float> histo;
+  std::vector<long> histo;
 
   // MPI
   int my_rank  = 0;

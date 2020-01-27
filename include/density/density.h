@@ -32,6 +32,7 @@
 #pragma once
 /* -------------------------------------------------------------------------- */
 #include <mpi.h>
+#include <fstream>
 #include <cassert>
 
 #include "utils/json.h"
@@ -58,23 +59,22 @@ private:
 
   // IO
   std::string json_path;
-  std::string input_full;
+  std::string input;
   std::string output_log;
-  std::string output_gnu;
+  std::string output_plot;
   std::stringstream debug_log;
   std::unique_ptr<HACCDataLoader> ioMgr;
 
+  int extents[2] = {0, 0};
+
+  // histogram
   int num_bins = 0;
+  long local_count = 0;
+  long total_count = 0;
 
-  long local_parts = 0;
-  long total_parts = 0;
-  long local_updated = 0;
-  long total_updated = 0;
-
-  // per-scalar data
-  std::vector<size_t> count;
-  std::vector<double> entropy;
-  std::vector<std::vector<double>> frequency;
+  std::vector<double> frequency;
+  std::vector<float> dataset;
+  std::vector<float> histo;
 
   // MPI
   int my_rank  = 0;

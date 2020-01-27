@@ -6,7 +6,6 @@
 #SBATCH --job-name density
 
 RANKS=8
-
 BUILD="/projects/exasky/hoby-projects/helios/build"
 INPUT_JSON="../inputs/density_darwin.json"
 

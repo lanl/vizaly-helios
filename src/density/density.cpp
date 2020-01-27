@@ -162,9 +162,10 @@ void Density::computeFrequencies() {
   if (my_rank == 0) {
     dumpHistogram();
     std::cout << "done." << std::endl;
-    std::cout << "= histogram: '" << output_plot << ".dat'" << std::endl;
+    std::cout << "= number of particles: " << total_count << std::endl;
     std::cout << "= number of bins: " << nb_bins << std::endl;
-    std::cout << "= (min, max): (" << total_min << ", " << total_max << ")"<< std::endl;
+    std::cout << "= density range: [" << total_min << ", " << total_max << "]"<< std::endl;
+    std::cout << "= histogram file: '" << output_plot << ".dat'" << std::endl;
   }
 
   MPI_Barrier(comm);

@@ -48,7 +48,7 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   // parse params and do basic checks
   file >> json;
 
-  assert(json["density"].count("input"));
+  assert(json["density"].count("inputs"));
   assert(json["density"].count("extents"));
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));

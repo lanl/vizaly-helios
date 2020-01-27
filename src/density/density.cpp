@@ -31,3 +31,50 @@
 
 #include "density/density.h"
 /* -------------------------------------------------------------------------- */
+
+Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_comm)
+  : json_path(in_path),
+    my_rank(in_rank),
+    nb_ranks(in_nb_ranks),
+    comm(in_comm) {
+  assert(nb_ranks > 0);
+  nlohmann::json json;
+  std::string buffer;
+
+  std::ifstream file(json_path);
+  assert(file.is_open());
+  assert(file.good());
+
+  // parse params and do basic checks
+  file >> json;
+
+  assert(json["density"].count("input"));
+  assert(json["density"].count("ranks"));
+  assert(json["density"].count("extents"));
+  assert(json["density"]["extents"].count("min"));
+  assert(json["density"]["extents"].count("max"));
+  assert(json["density"].count("num_bins"));
+  assert(json["density"].count("logs"));
+  assert(json["density"].count("plots"));
+
+  input = json["density"]["input"];
+  output_log = json["density"]["logs"];
+  output_plot = json["density"]["plots"];
+  num_bins = json["density"]["num_bins"];
+  assert(num_bins > 0);
+
+  extents[0] = json["density"]["extents"]["min"];
+  extents[1] = json["density"]["extents"]["max"];
+  assert(extents[0] < extents[1]);
+
+  dataset.clear();
+  histo.clear();
+
+  // set the IO manager
+  ioMgr = std::make_unique<HACCDataLoader>();
+}
+
+/* -------------------------------------------------------------------------- */
+bool Density::run() { /* todo */ return false; }
+
+/* -------------------------------------------------------------------------- */

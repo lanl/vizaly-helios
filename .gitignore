@@ -3,3 +3,4 @@ build
 travis
 inputs/*.raw
 inputs/*.xml
+*.DS_Store

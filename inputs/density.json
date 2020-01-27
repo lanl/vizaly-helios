@@ -1,14 +1,14 @@
 {
   "density": {
     "inputs": [
-      "/home/hoby/dev/exasky/hacc/run/density.000.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.001.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.002.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.003.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.004.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.005.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.006.rho.raw",
-      "/home/hoby/dev/exasky/hacc/run/density.007.rho.raw"
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.000.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.001.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.002.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.003.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.004.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.005.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.006.rho.raw", "count": 134217728 },
+      { "data": "/Users/hoby/dev/exasky/helios/inputs/density.007.rho.raw", "count": 134217728 }
     ],
     "extents": { "min": 0, "max": 511 },
     "nb_bins": 4096,

@@ -86,10 +86,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   nb_bins = json["density"]["nb_bins"];
   assert(nb_bins > 0);
   histo.resize(nb_bins);
-
-  extents[0] = json["density"]["extents"]["min"];
-  extents[1] = json["density"]["extents"]["max"];
-  assert(extents[0] < extents[1]);
 }
 
 /* -------------------------------------------------------------------------- */

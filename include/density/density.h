@@ -56,7 +56,6 @@ private:
 
   bool loadFiles();
   void computeFrequencies();
-  void dumpLogs();
   void dumpHistogram();
 
   // IO
@@ -64,8 +63,6 @@ private:
   std::vector<std::pair<std::string,long>> inputs;    // local to this rank
   std::string output_log;
   std::string output_plot;
-
-  int extents[2] = {0, 0};
 
   // histogram
   int nb_bins = 0;

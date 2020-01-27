@@ -49,7 +49,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   file >> json;
 
   assert(json["density"].count("input"));
-  assert(json["density"].count("ranks"));
   assert(json["density"].count("extents"));
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));
@@ -57,7 +56,13 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"].count("logs"));
   assert(json["density"].count("plots"));
 
-  input = json["density"]["input"];
+  for (auto const& path : json["density"]["inputs"])
+    inputs.emplace_back(path);
+
+  int const partition_size = inputs.size();
+  if (nb_ranks > 1 and partition_size % nb_ranks != 0)
+    throw std::runtime_error("incompatible number of ranks and data partition");
+
   output_log = json["density"]["logs"];
   output_plot = json["density"]["plots"];
   num_bins = json["density"]["num_bins"];
@@ -69,12 +74,27 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 
   dataset.clear();
   histo.clear();
-
-  // set the IO manager
-  ioMgr = std::make_unique<HACCDataLoader>();
 }
 
 /* -------------------------------------------------------------------------- */
-bool Density::run() { /* todo */ return false; }
+bool Density::load(std::string path, int offset) {
 
+  // load binary file
+  debug_log.clear();
+  debug_log.str("");
+  debug_log << "Loading density file '" << path << "' ... " << std::flush;
+
+  // TODO: create
+
+  return false;
+}
+
+
+/* -------------------------------------------------------------------------- */
+bool Density::run() {
+
+
+
+
+}
 /* -------------------------------------------------------------------------- */

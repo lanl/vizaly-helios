@@ -52,6 +52,8 @@ public:
   bool run();
 
 private:
+
+  bool load(std::string path, int offset = 0);
   bool computeFrequencies(int i, float* data);
   void filterParticles();
   void dumpLogs();
@@ -59,11 +61,10 @@ private:
 
   // IO
   std::string json_path;
-  std::string input;
+  std::vector<std::string> inputs;
   std::string output_log;
   std::string output_plot;
   std::stringstream debug_log;
-  std::unique_ptr<HACCDataLoader> ioMgr;
 
   int extents[2] = {0, 0};
 

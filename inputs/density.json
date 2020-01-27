@@ -1,7 +1,15 @@
 {
   "density": {
-    "input": "/home/hoby/dev/exasky/hacc/run/density",
-    "ranks": 8,
+    "inputs": [
+      "/home/hoby/dev/exasky/hacc/run/density.000.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.001.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.002.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.003.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.004.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.005.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.006.rho.raw",
+      "/home/hoby/dev/exasky/hacc/run/density.007.rho.raw"
+    ],
     "extents": { "min": 0, "max": 511 },
     "num_bins": 4096,
     "logs": "logs/log_density",

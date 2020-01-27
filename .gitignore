@@ -4,3 +4,4 @@ travis
 inputs/*.raw
 inputs/*.xml
 *.DS_Store
+scripts/*.eps

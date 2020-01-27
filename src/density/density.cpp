@@ -64,12 +64,18 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
     int offset = static_cast<int>(partition_size / nb_ranks);
     assert(offset);
 
+    local_count = 0;
     for (int i = 0; i < offset; ++i) {
       int index = i + my_rank * offset;
-      inputs.emplace_back(json["density"]["inputs"][index]);
-      std::cout << "rank["<< my_rank <<"]: "<< inputs.back() << std::endl;
+      auto&& current = json["density"]["inputs"][index];
+      inputs.emplace_back(current["data"], current["count"]);
+      std::cout << "["<< my_rank <<"]: \""<< inputs.back().first << "\""<< std::endl;
+      local_count += inputs.back().second;
     }
 
+    // resize buffer
+    density.resize(local_count);
+    //density.resize(4 * offset);
   } else
     throw std::runtime_error("mismatch on number of ranks and data partition");
 
@@ -82,26 +88,54 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   extents[1] = json["density"]["extents"]["max"];
   assert(extents[0] < extents[1]);
 
-  dataset.clear();
   histo.clear();
 }
 
 /* -------------------------------------------------------------------------- */
-bool Density::load(std::string path, int offset) {
+bool Density::load(std::string const& path, long count, long offset) {
 
-  // load binary file
-  debug_log.clear();
-  debug_log.str("");
-  debug_log << "Loading density file '" << path << "' ... " << std::flush;
+  std::ifstream file(path, std::ios::binary);
+  if (not file.good())
+    return false;
 
-  // TODO: create
+  debug_log << "Loading density file ... " << std::flush;
 
-  return false;
+  auto buffer = reinterpret_cast<char*>(density.data() + offset);
+  file.seekg(0, std::ios::beg);
+  file.read(buffer, count * sizeof(float));
+  file.close();
+
+  debug_log << "done" << std::endl;
+  return true;
 }
-
 
 /* -------------------------------------------------------------------------- */
 bool Density::run() {
+
+  debug_log.clear();
+  debug_log.str("");
+
+  // step 1: load current rank dataset in memory
+  long offset = 0;
+  for (auto&& current : inputs) {
+    auto&& path = current.first;
+    auto&& count = current.second;
+    load(path, count, offset);
+    offset += count;
+  }
+
+  debug_log << "["<< my_rank <<"]: "<< density.size() << " values loaded." << std::endl;
+
+  // step 2: compute frequencies and histogram
+
+
+
+#if DEBUG
+
+  for (float const& value : density) {
+    std::cout << "rank["<< my_rank <<"]: density = "<< value << std::endl;
+  }
+#endif
 
   // TODO
   return false;

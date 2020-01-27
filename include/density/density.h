@@ -32,6 +32,7 @@
 #pragma once
 /* -------------------------------------------------------------------------- */
 #include <mpi.h>
+#include <iostream>
 #include <fstream>
 #include <cassert>
 
@@ -53,7 +54,7 @@ public:
 
 private:
 
-  bool load(std::string path, int offset = 0);
+  bool load(std::string const& path, long count, long offset = 0);
   bool computeFrequencies(int i, float* data);
   void filterParticles();
   void dumpLogs();
@@ -61,7 +62,7 @@ private:
 
   // IO
   std::string json_path;
-  std::vector<std::string> inputs;    // local to this rank
+  std::vector<std::pair<std::string,long>> inputs;    // local to this rank
   std::string output_log;
   std::string output_plot;
   std::stringstream debug_log;
@@ -74,7 +75,7 @@ private:
   long total_count = 0;
 
   std::vector<double> frequency;
-  std::vector<float> dataset;
+  std::vector<float> density;
   std::vector<float> histo;
 
   // MPI

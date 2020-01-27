@@ -1,0 +1,15 @@
+{
+  "density": {
+    "input": "/home/hoby/dev/exasky/hacc/run/density",
+    "ranks": 8,
+    "dimension": 3,
+    "extents": [
+      { "min": 0, "max": 511 },
+      { "min": 0, "max": 511 },
+      { "min": 0, "max": 511 }
+    ],
+    "components": 1,
+    "logs": "logs/log_density",
+    "plots": "density_distrib"
+  }
+}

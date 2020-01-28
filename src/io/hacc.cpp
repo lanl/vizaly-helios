@@ -256,9 +256,17 @@ bool HACCDataLoader::load(std::string paramName) {
     int y_range = max[1] - min[1];
     int z_range = max[2] - min[2];
 
+    data_extents[0] = std::make_pair(min[0], max[0]);
+    data_extents[1] = std::make_pair(min[1], max[1]);
+    data_extents[2] = std::make_pair(min[2], max[2]);
+
     mpi_partition[0] = static_cast<int>(phys_scale[0] / x_range);
     mpi_partition[1] = static_cast<int>(phys_scale[1] / y_range);
     mpi_partition[2] = static_cast<int>(phys_scale[2] / z_range);
+
+    log << "\t[x_min, x_max]: [" << min[0] << ", " << max[0] << "]" << std::endl;
+    log << "\t[y_min, y_max]: [" << min[1] << ", " << max[1] << "]" << std::endl;
+    log << "\t[z_min, z_max]: [" << min[2] << ", " << max[2] << "]" << std::endl;
 
     log << "mpiCartPartitions: ";
     log << mpi_partition[0] << ", "

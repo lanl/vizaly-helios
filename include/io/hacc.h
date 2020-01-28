@@ -46,6 +46,7 @@ public:
   double phys_orig[3]{0, 0, 0};
   double phys_scale[3]{0, 0, 0};
   int mpi_partition[3]{0, 0, 0};
+  std::pair<int,int> data_extents[3];
 
   HACCDataLoader() {
     loader = "HACC";

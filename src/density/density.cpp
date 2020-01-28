@@ -55,6 +55,12 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"].count("nb_bins"));
   assert(json["density"].count("plots"));
 
+  // retrieve number of cells per axis
+  int const c_min = json["density"]["extents"]["min"];
+  int const c_max = json["density"]["extents"]["max"];
+  cells_per_axis = 1 + c_max - c_min;
+  assert(cells_per_axis > 0);
+
   // dispatch files to MPI ranks
   int partition_size = json["density"]["inputs"].size();
   bool rank_mismatch = (partition_size < nb_ranks) or (partition_size % nb_ranks != 0);
@@ -169,6 +175,20 @@ void Density::computeFrequencies() {
   }
 
   MPI_Barrier(comm);
+}
+
+/* -------------------------------------------------------------------------- */
+long Density::retrieveIndex(const float coords[3], const float extents[3]) const {
+
+  auto const n_cells_axis = static_cast<float>(cells_per_axis);
+
+  // step 1: physical coordinates to logical coordinates
+  auto i = static_cast<int>(std::floor(coords[0] * n_cells_axis / extents[0]));
+  auto j = static_cast<int>(std::floor(coords[1] * n_cells_axis / extents[1]));
+  auto k = static_cast<int>(std::floor(coords[2] * n_cells_axis / extents[2]));
+
+  // step 2: logical coordinates to flat array index
+  return i + j * cells_per_axis + k * cells_per_axis * cells_per_axis;
 }
 
 /* -------------------------------------------------------------------------- */

@@ -57,6 +57,7 @@ private:
   bool loadFiles();
   void computeFrequencies();
   void dumpHistogram();
+  long retrieveIndex(const float coords[3], const float extents[3]) const;
 
   // IO
   std::string json_path;
@@ -70,6 +71,7 @@ private:
   double total_min = 0.;
   double total_max = 0.;
 
+  int cells_per_axis = 0;          // cartesian grid
   std::vector<float> density;
   std::vector<long> histo;
 

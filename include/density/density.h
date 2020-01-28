@@ -54,10 +54,10 @@ public:
 
 private:
 
-  bool loadFiles();
+  bool cacheData();
   void computeFrequencies();
   void dumpHistogram();
-  long deduceIndex(const float *coords, const float *extents) const;
+  long deduceIndex(const float* particle) const;
 
   // IO
   std::string json_path;
@@ -68,7 +68,8 @@ private:
 
   // particle meta-data
   int cells_per_axis = 0;                // cartesian grid
-  std::pair<int,int> coords_extents[3];  // (min, max)
+  float coords_min[3] = { 0.,0.,0.};
+  float coords_max[3] = { 0.,0.,0.};
   long local_parts = 0;
   long total_parts = 0;
 

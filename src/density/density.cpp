@@ -99,7 +99,7 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 }
 
 /* -------------------------------------------------------------------------- */
-bool Density::loadFiles() {
+bool Density::cacheData() {
 
   bool const master_rank = (my_rank == 0);
 
@@ -136,7 +136,10 @@ bool Density::loadFiles() {
     MPI_Allreduce(&local_parts, &total_parts, 1, MPI_LONG, MPI_SUM, comm);
 
     // cache data extents
-    std::copy(ioMgr->data_extents, ioMgr->data_extents+3, coords_extents);
+    for (int i = 0; i < 3; ++i) {
+      coords_min[i] = static_cast<float>(ioMgr->data_extents[i].first);
+      coords_max[i] = static_cast<float>(ioMgr->data_extents[i].second);
+    }
 
     if (master_rank)
       std::cout << "done." << std::endl;
@@ -150,7 +153,7 @@ bool Density::loadFiles() {
     std::string path;
 
     if (master_rank)
-      std::cout << "Caching density values ... " << std::flush;
+      std::cout << "Caching density data ... " << std::flush;
 
     for (auto&& current : inputs) {
       std::tie(path, count) = current;
@@ -230,16 +233,24 @@ void Density::computeFrequencies() {
 }
 
 /* -------------------------------------------------------------------------- */
-long Density::deduceIndex(const float *coords, const float *extents) const {
+long Density::deduceIndex(const float* particle) const {
 
+  float range[3];
+  float shifted[3];
   auto const n_cells_axis = static_cast<float>(cells_per_axis);
 
-  // step 1: physical coordinates to logical coordinates
-  auto i = static_cast<int>(std::floor(coords[0] * n_cells_axis / extents[0]));
-  auto j = static_cast<int>(std::floor(coords[1] * n_cells_axis / extents[1]));
-  auto k = static_cast<int>(std::floor(coords[2] * n_cells_axis / extents[2]));
+  // step 1: shift particle coordinates and compute related range
+  for (int i = 0; i < 3; ++i) {
+    shifted[i] = particle[i] - coords_min[i];
+    range[i] = coords_max[i] - coords_min[i];
+  }
 
-  // step 2: logical coordinates to flat array index
+  // step 2: physical coordinates to logical coordinates
+  auto i = static_cast<int>(std::floor(shifted[0] * n_cells_axis / range[0]));
+  auto j = static_cast<int>(std::floor(shifted[1] * n_cells_axis / range[1]));
+  auto k = static_cast<int>(std::floor(shifted[2] * n_cells_axis / range[2]));
+
+  // step 3: logical coordinates to flat array index
   return i + j * cells_per_axis + k * cells_per_axis * cells_per_axis;
 }
 
@@ -269,7 +280,7 @@ void Density::dumpHistogram() {
 void Density::run() {
 
   // step 1: load current rank dataset in memory
-  loadFiles();
+  cacheData();
 
   // step 2: compute frequencies and histogram
   computeFrequencies();

@@ -58,9 +58,11 @@ private:
   void computeFrequencies();
   void dumpHistogram();
 
-  // index mapping
+  // particle to density field mapping methods
   long deduceDensityIndex(const float* particle) const;
   int deduceBucketIndex(float const& rho) const;
+  void bucketParticles();
+  void dumpBuckets();
 
   // IO
   std::string json_path;
@@ -84,9 +86,11 @@ private:
   double total_rho_max = 0.;
 
   // actual datasets
-  std::vector<float> coords[3];
-  std::vector<float> density;
-  std::vector<long> histo;
+  std::vector<float> coords[3];                    // size: local_particles
+  std::vector<float> density_field;                // size: local_rho_count
+  std::vector<long> histogram;                     // size: nb_bins
+  std::vector<std::vector<long>> buckets;           // size: nb_bins
+  std::vector<int> compression_factor;             // size: nb_bins
 
   // MPI
   int my_rank  = 0;

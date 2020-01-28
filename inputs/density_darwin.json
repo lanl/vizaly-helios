@@ -12,7 +12,7 @@
       { "data": "/home/hoby/dev/exasky/hacc/run/density.007.rho.raw", "count": 134217728 }
     ],
     "extents": { "min": 0, "max": 511 },
-    "nb_bins": 4096,
+    "bins": 4096,
     "plots": "density_distrib"
   }
 }

@@ -93,7 +93,7 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(nb_bins > 0);
 
   histogram.resize(nb_bins);
-  particle_buckets.resize(nb_bins);
+  buckets.resize(nb_bins);
 
   // set the HACC IO manager
   ioMgr = std::make_unique<HACCDataLoader>();
@@ -280,8 +280,14 @@ void Density::bucketParticles() {
   for (auto&& current : buckets)
     current.shrink_to_fit();
 
-  // print some stats
-
+  // for debug purposes
+  if (my_rank == 0) {
+    auto const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
+    for (int i = 0; i < nb_bins; ++i) {
+      auto const rho_max = total_rho_min + (i * width);
+      std::printf("bucket[%d]: rho_max=%.f, nb_particles=%lu\n", i, rho_max, buckets[i].size());
+    }
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -307,6 +313,12 @@ void Density::dumpHistogram() {
 }
 
 /* -------------------------------------------------------------------------- */
+void Density::inflate() {/* TODO */}
+
+/* -------------------------------------------------------------------------- */
+void Density::dump() {/* TODO */}
+
+/* -------------------------------------------------------------------------- */
 void Density::run() {
 
   // step 1: load current rank dataset in memory
@@ -314,6 +326,9 @@ void Density::run() {
 
   // step 2: compute frequencies and histogram
   computeFrequencies();
+
+  // step 3: bucket particles
+  bucketParticles();
 }
 
 /* -------------------------------------------------------------------------- */

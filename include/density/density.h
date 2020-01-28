@@ -62,7 +62,8 @@ private:
   long deduceDensityIndex(const float* particle) const;
   int deduceBucketIndex(float const& rho) const;
   void bucketParticles();
-  void dumpBuckets();
+  void inflate();
+  void dump();
 
   // IO
   std::string json_path;

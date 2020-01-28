@@ -275,7 +275,7 @@ int Density::deduceBucketIndex(float const& rho) const {
 
   assert(rho < total_rho_max);
   auto const coef = rho / (local_rho_max - local_rho_min);
-  auto const index = static_cast<int>(std::ceil(coef * float(nb_bins))) - 1;
+  auto const index = std::max(static_cast<int>(std::ceil(coef * float(nb_bins))) - 1, 0);
   assert(index < nb_bins);
   return index;
 }

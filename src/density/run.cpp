@@ -31,6 +31,16 @@
 
 #include "density/density.h"
 /* -------------------------------------------------------------------------- */
+int abort(std::string message = "", int my_rank = 0) {
+
+  if (my_rank == 0 and not message.empty())
+    std::cerr << "Error: " << message << std::endl;
+
+  MPI_Finalize();
+  return EXIT_FAILURE;
+}
+
+/* -------------------------------------------------------------------------- */
 int main(int argc, char* argv[]){
 
   int my_rank = 0;
@@ -43,22 +53,17 @@ int main(int argc, char* argv[]){
   MPI_Comm_rank(comm, &my_rank);
 
   // basic input checks
-  if (not tools::valid(argc, argv, my_rank, nb_ranks)) {
-    MPI_Finalize();
-    return EXIT_FAILURE;
-  }
+  if (not tools::valid(argc, argv, my_rank, nb_ranks))
+    return abort("", my_rank);
 
   try {
     Density density(argv[1], my_rank, nb_ranks, comm);
 
     // run the analyzer
     density.run();
-  } catch (std::exception& exception) {
-    // something went wrong
-    if (my_rank == 0)
-      std::cerr << "Error: " << exception.what() << std::endl;
-    MPI_Finalize();
-    return EXIT_FAILURE;
+  }
+  catch (std::exception& exception) {
+    return abort(exception.what(), my_rank);
   }
 
   // everything was ok

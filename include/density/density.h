@@ -57,7 +57,10 @@ private:
   bool cacheData();
   void computeFrequencies();
   void dumpHistogram();
-  long deduceIndex(const float* particle) const;
+
+  // index mapping
+  long deduceDensityIndex(const float* particle) const;
+  int deduceBucketIndex(float const& rho) const;
 
   // IO
   std::string json_path;
@@ -70,15 +73,15 @@ private:
   int cells_per_axis = 0;                // cartesian grid
   float coords_min[3] = { 0.,0.,0.};
   float coords_max[3] = { 0.,0.,0.};
-  long local_parts = 0;
-  long total_parts = 0;
+  long local_particles = 0;
+  long total_particles = 0;
 
   // histogram
   int nb_bins = 0;
-  long local_count = 0;
-  long total_count = 0;
-  double total_min = 0.;
-  double total_max = 0.;
+  long local_rho_count = 0;
+  long total_rho_count = 0;
+  double total_rho_min = 0.;
+  double total_rho_max = 0.;
 
   // actual datasets
   std::vector<float> coords[3];

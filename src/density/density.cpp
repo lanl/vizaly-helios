@@ -71,19 +71,19 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
     int offset = static_cast<int>(partition_size / nb_ranks);
     assert(offset);
 
-    local_count = 0;
+    local_rho_count = 0;
     for (int i = 0; i < offset; ++i) {
       int index = i + my_rank * offset;
       auto&& current = json["density"]["inputs"][index];
       inputs.emplace_back(current["data"], current["count"]);
       std::cout << "rank["<< my_rank <<"]: \""<< inputs.back().first << "\""<< std::endl;
-      local_count += inputs.back().second;
+      local_rho_count += inputs.back().second;
     }
 
     // resize buffer
-    density.resize(local_count);
+    density.resize(local_rho_count);
     // retrieve the total number of elems
-    MPI_Allreduce(&local_count, &total_count, 1, MPI_LONG, MPI_SUM, comm);
+    MPI_Allreduce(&local_rho_count, &total_rho_count, 1, MPI_LONG, MPI_SUM, comm);
 
   } else
     throw std::runtime_error("mismatch on number of ranks and data partition");
@@ -132,8 +132,8 @@ bool Density::cacheData() {
     }
 
     // update particle count
-    local_parts = ioMgr->getNumElements();
-    MPI_Allreduce(&local_parts, &total_parts, 1, MPI_LONG, MPI_SUM, comm);
+    local_particles = ioMgr->getNumElements();
+    MPI_Allreduce(&local_particles, &total_particles, 1, MPI_LONG, MPI_SUM, comm);
 
     // cache data extents
     for (int i = 0; i < 3; ++i) {
@@ -187,16 +187,16 @@ void Density::computeFrequencies() {
   if (my_rank == 0)
     std::cout << "Computing frequencies ... " << std::flush;
 
-  assert(local_count);
-  assert(total_count);
+  assert(local_rho_count);
+  assert(total_rho_count);
 
   // determine data values extents
-  total_max = 0;
-  total_min = 0;
-  double local_min = *std::min_element(density.data(), density.data()+local_count);
-  double local_max = *std::max_element(density.data(), density.data()+local_count);
-  MPI_Allreduce(&local_max, &total_max, 1, MPI_DOUBLE, MPI_MAX, comm);
-  MPI_Allreduce(&local_min, &total_min, 1, MPI_DOUBLE, MPI_MIN, comm);
+  total_rho_max = 0;
+  total_rho_min = 0;
+  double local_rho_min = *std::min_element(density.data(), density.data() + local_rho_count);
+  double local_rho_max = *std::max_element(density.data(), density.data() + local_rho_count);
+  MPI_Allreduce(&local_rho_max, &total_rho_max, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Allreduce(&local_rho_min, &total_rho_min, 1, MPI_DOUBLE, MPI_MIN, comm);
 
   // compute histogram of values
   long local_histo[nb_bins];
@@ -205,11 +205,11 @@ void Density::computeFrequencies() {
   std::fill(local_histo, local_histo + nb_bins, 0);
   std::fill(total_histo, total_histo + nb_bins, 0);
 
-  double const range = total_max - total_min;
+  double const range = total_rho_max - total_rho_min;
   double const capacity = range / nb_bins;
 
-  for (auto k = 0; k < local_count; ++k) {
-    double relative_value = (density[k] - total_min) / range;
+  for (auto k = 0; k < local_rho_count; ++k) {
+    double relative_value = (density[k] - total_rho_min) / range;
     int index = static_cast<int>((range * relative_value) / capacity);
 
     if (index >= nb_bins)
@@ -223,9 +223,9 @@ void Density::computeFrequencies() {
   if (my_rank == 0) {
     dumpHistogram();
     std::cout << "done." << std::endl;
-    std::cout << "= number of particles: " << total_count << std::endl;
+    std::cout << "= number of particles: " << total_rho_count << std::endl;
     std::cout << "= number of bins: " << nb_bins << std::endl;
-    std::cout << "= density range: [" << total_min << ", " << total_max << "]"<< std::endl;
+    std::cout << "= density range: [" << total_rho_min << ", " << total_rho_max << "]" << std::endl;
     std::cout << "= histogram file: '" << output_plot << ".dat'" << std::endl;
   }
 
@@ -233,7 +233,7 @@ void Density::computeFrequencies() {
 }
 
 /* -------------------------------------------------------------------------- */
-long Density::deduceIndex(const float* particle) const {
+long Density::deduceDensityIndex(const float* particle) const {
 
   float range[3];
   float shifted[3];
@@ -255,9 +255,19 @@ long Density::deduceIndex(const float* particle) const {
 }
 
 /* -------------------------------------------------------------------------- */
+int Density::deduceBucketIndex(float const &rho) const {
+
+  assert(rho < total_rho_max);
+  auto const coef = rho / (total_rho_max - total_rho_min);
+  auto const index = static_cast<int>(std::floor(coef * float(nb_bins))) - 1;
+  assert(index < nb_bins);
+  return index;
+}
+
+/* -------------------------------------------------------------------------- */
 void Density::dumpHistogram() {
 
-  double const width = (total_max - total_min) / static_cast<double>(nb_bins);
+  double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
 
   std::ofstream file(output_plot + ".dat", std::ios::trunc);
   assert(file.is_open());
@@ -269,7 +279,7 @@ void Density::dumpHistogram() {
 
   int k = 1;
   for (auto&& value : histo) {
-    file << total_min + (k * width) << "\t"<< value << std::endl;
+    file << total_rho_min + (k * width) << "\t" << value << std::endl;
     k++;
   }
 

@@ -207,10 +207,10 @@ void Density::computeFrequencies() {
   assert(total_rho_count);
 
   // determine data values extents
-  total_rho_max = 0;
-  total_rho_min = 0;
-  double local_rho_min = *std::min_element(density_field.data(), density_field.data() + local_rho_count);
-  double local_rho_max = *std::max_element(density_field.data(), density_field.data() + local_rho_count);
+  total_rho_max = 0.0;
+  total_rho_min = 0.0;
+  local_rho_min = *std::min_element(density_field.data(), density_field.data() + local_rho_count);
+  local_rho_max = *std::max_element(density_field.data(), density_field.data() + local_rho_count);
   MPI_Allreduce(&local_rho_max, &total_rho_max, 1, MPI_DOUBLE, MPI_MAX, comm);
   MPI_Allreduce(&local_rho_min, &total_rho_min, 1, MPI_DOUBLE, MPI_MIN, comm);
 
@@ -274,8 +274,8 @@ long Density::deduceDensityIndex(const float* particle) const {
 int Density::deduceBucketIndex(float const& rho) const {
 
   assert(rho < total_rho_max);
-  auto const coef = rho / (total_rho_max - total_rho_min);
-  auto const index = static_cast<int>(std::floor(coef * float(nb_bins))) - 1;
+  auto const coef = rho / (local_rho_max - local_rho_min);
+  auto const index = std::max(static_cast<int>(std::floor(coef * float(nb_bins))) - 1, 0);
   assert(index < nb_bins);
   return index;
 }

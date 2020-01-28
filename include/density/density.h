@@ -83,6 +83,8 @@ private:
   int nb_bins = 0;
   long local_rho_count = 0;
   long total_rho_count = 0;
+  double local_rho_min = 0.;
+  double local_rho_max = 0.;
   double total_rho_min = 0.;
   double total_rho_max = 0.;
 

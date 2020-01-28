@@ -57,12 +57,20 @@ private:
   bool loadFiles();
   void computeFrequencies();
   void dumpHistogram();
-  long retrieveIndex(const float coords[3], const float extents[3]) const;
+  long deduceIndex(const float *coords, const float *extents) const;
 
   // IO
   std::string json_path;
+  std::string input_hacc;
   std::vector<std::pair<std::string,long>> inputs;    // local to this rank
   std::string output_plot;
+  std::unique_ptr<HACCDataLoader> ioMgr;
+
+  // particle meta-data
+  int cells_per_axis = 0;                // cartesian grid
+  std::pair<int,int> coords_extents[3];  // (min, max)
+  long local_parts = 0;
+  long total_parts = 0;
 
   // histogram
   int nb_bins = 0;
@@ -71,7 +79,8 @@ private:
   double total_min = 0.;
   double total_max = 0.;
 
-  int cells_per_axis = 0;          // cartesian grid
+  // actual datasets
+  std::vector<float> coords[3];
   std::vector<float> density;
   std::vector<long> histo;
 

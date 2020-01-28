@@ -109,6 +109,8 @@ target_sources(noising PRIVATE
 target_sources(density PRIVATE
 		src/utils/tools.cpp
 		src/utils/memory.cpp
+		src/io/data.cpp
+		src/io/hacc.cpp
 		src/density/density.cpp
 		src/density/run.cpp)
 

@@ -48,6 +48,8 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   // parse params and do basic checks
   file >> json;
 
+  assert(json.count("particles"));
+  assert(json.count("density"));
   assert(json["density"].count("inputs"));
   assert(json["density"].count("extents"));
   assert(json["density"]["extents"].count("min"));
@@ -87,42 +89,92 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
     throw std::runtime_error("mismatch on number of ranks and data partition");
 
   output_plot = json["density"]["plots"];
-  nb_bins = json["density"]["nb_bins"];
+  nb_bins = json["density"]["bins"];
   assert(nb_bins > 0);
   histo.resize(nb_bins);
+
+  // set the HACC IO manager
+  ioMgr = std::make_unique<HACCDataLoader>();
+  input_hacc = json["particles"];
 }
 
 /* -------------------------------------------------------------------------- */
 bool Density::loadFiles() {
 
-  if (my_rank == 0)
-    std::cout << "Loading density values ... " << std::flush;
+  bool const master_rank = (my_rank == 0);
 
-  long offset = 0;
-  long count = 0;
-  std::string path;
+  // step 1: load particle file
+  if (not input_hacc.empty()) {
 
-  for (auto&& current : inputs) {
-    std::tie(path, count) = current;
+    ioMgr->init(input_hacc, comm);
+    ioMgr->saveParams();
+    ioMgr->setSave(true);
 
-    std::ifstream file(path, std::ios::binary);
-    if (not file.good())
-      return false;
+    std::string const scalars[] = { "x", "y", "z" };
 
-    auto buffer = reinterpret_cast<char *>(density.data() + offset);
-    auto size = count * sizeof(float);
+    if (master_rank)
+      std::cout << "Caching particle data ... " << std::flush;
 
-    file.seekg(0, std::ios::beg);
-    file.read(buffer, size);
-    file.close();
+    for (int i = 0; i < 3; ++i) {
+      if (ioMgr->load(scalars[i])) {
+        // retrieve debug infos
+        if (master_rank) {
+          std::cout << ioMgr->getDataInfo();
+          std::cout << ioMgr->getLog();
+        }
+        // store actual data
+        auto const n = ioMgr->getNumElements();
+        auto const data = static_cast<float*>(ioMgr->data);
+        coords[i].resize(n);
+        std::copy(data, data + n, coords[i].data());
+      }
+      MPI_Barrier(comm);
+    }
 
-    // update offset
-    offset += count;
+    // update particle count
+    local_parts = ioMgr->getNumElements();
+    MPI_Allreduce(&local_parts, &total_parts, 1, MPI_LONG, MPI_SUM, comm);
+
+    // cache data extents
+    std::copy(ioMgr->data_extents, ioMgr->data_extents+3, coords_extents);
+
+    if (master_rank)
+      std::cout << "done." << std::endl;
   }
 
-  if (my_rank == 0)
-    std::cout << "done." << std::endl;
-  return not density.empty();
+  // step 2: load density file
+  if (not inputs.empty()) {
+
+    long offset = 0;
+    long count = 0;
+    std::string path;
+
+    if (master_rank)
+      std::cout << "Caching density values ... " << std::flush;
+
+    for (auto&& current : inputs) {
+      std::tie(path, count) = current;
+
+      std::ifstream file(path, std::ios::binary);
+      if (not file.good())
+        return false;
+
+      auto buffer = reinterpret_cast<char *>(density.data() + offset);
+      auto size = count * sizeof(float);
+
+      file.seekg(0, std::ios::beg);
+      file.read(buffer, size);
+      file.close();
+
+      // update offset
+      offset += count;
+    }
+
+    if (master_rank)
+      std::cout << "done." << std::endl;
+  }
+
+  return true;
 }
 
 
@@ -178,7 +230,7 @@ void Density::computeFrequencies() {
 }
 
 /* -------------------------------------------------------------------------- */
-long Density::retrieveIndex(const float coords[3], const float extents[3]) const {
+long Density::deduceIndex(const float *coords, const float *extents) const {
 
   auto const n_cells_axis = static_cast<float>(cells_per_axis);
 

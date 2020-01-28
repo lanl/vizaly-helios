@@ -88,6 +88,7 @@ private:
 
   // actual datasets
   std::vector<float> coords[3];                    // size: local_particles
+  std::vector<float> velocity[3];                  // size: local_particles
   std::vector<float> density_field;                // size: local_rho_count
   std::vector<long> histogram;                     // size: nb_bins
   std::vector<std::vector<long>> buckets;           // size: nb_bins

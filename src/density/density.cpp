@@ -112,13 +112,14 @@ bool Density::cacheData() {
     ioMgr->saveParams();
     ioMgr->setSave(true);
 
-    std::string const scalars[] = { "x", "y", "z" };
+    std::string const coordinates[] = {"x", "y", "z" };
+    std::string const velocities[] = {"vx", "vy", "vz"};
 
     if (master_rank)
       std::cout << "Caching particle data ... " << std::flush;
 
     for (int i = 0; i < 3; ++i) {
-      if (ioMgr->load(scalars[i])) {
+      if (ioMgr->load(coordinates[i])) {
         // retrieve debug infos
         if (master_rank) {
           std::cout << ioMgr->getDataInfo();
@@ -142,6 +143,19 @@ bool Density::cacheData() {
       coords_min[i] = static_cast<float>(ioMgr->data_extents[i].first);
       coords_max[i] = static_cast<float>(ioMgr->data_extents[i].second);
     }
+
+    // cache velocity components now
+    /*
+    for (int i = 0; i < 3; ++i) {
+      if (ioMgr->load(velocities[i])) {
+        // store actual data
+        auto const n = ioMgr->getNumElements();
+        auto const data = static_cast<float*>(ioMgr->data);
+        velocity[i].resize(n);
+        std::copy(data, data + n, velocity[i].data());
+      }
+      MPI_Barrier(comm);
+    }*/
 
     if (master_rank)
       std::cout << "done." << std::endl;
@@ -272,7 +286,11 @@ void Density::bucketParticles() {
   for (int i = 0; i < local_particles; ++i) {
     float particle[] = { coords[0][i], coords[1][i], coords[2][i] };
     auto const density_index = deduceDensityIndex(particle);
+    assert(density_index < local_rho_count);
     auto const bucket_index  = deduceBucketIndex(density_field[density_index]);
+    assert(bucket_index < nb_bins);
+    if (my_rank == 0)
+      std::cout << "density_index: " << density_index << ", bucket_index: " << bucket_index << std::endl;
     // copy data in correct bucket
     buckets[bucket_index].push_back(i);
   }

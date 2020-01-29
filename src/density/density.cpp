@@ -290,10 +290,10 @@ void Density::dumpHistogram() {
 void Density::setNumberBits() {
 
   // temporary
-  bits[0] = 22;
-  for (int i =   1; i <  20; ++i) bits[i] = 23;
-  for (int i =  20; i <  50; ++i) bits[i] = 24;
-  for (int i =  50; i < 100; ++i) bits[i] = 25;
+  //bits[0] = 22;
+  for (int i =   0; i <  20; ++i) bits[i] = 20;
+  for (int i =  20; i <  50; ++i) bits[i] = 21;
+  for (int i =  50; i < 100; ++i) bits[i] = 22;
   for (int i = 100; i < nb_bins; ++i) bits[i] = 26;
 }
 
@@ -425,7 +425,7 @@ void Density::process(int step) {
 
     auto kernel = CompressorFactory::create("fpzip");
     kernel->init();
-    kernel->parameters["bits"] = std::to_string(bits[j]);
+    kernel->parameters["bits"] = std::to_string(step < 3 ? bits[j] : bits[j] - 2);
     kernel->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
     dataset.clear();
 

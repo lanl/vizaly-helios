@@ -17,7 +17,7 @@ set datafile separator whitespace
 set title 'density distribution'
 set xlabel "density"
 set size ratio 0.95
-set ylabel "particles\n"
+set ylabel "cells\n"
 set format y "10^{%2T}"
 
 set grid mytics xtics

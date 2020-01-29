@@ -57,7 +57,7 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"].count("extents"));
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));
-  assert(json["density"].count("nb_bins"));
+  assert(json["density"].count("bins"));
 
   assert(json.count("plots"));
   assert(json["plots"].count("density"));
@@ -122,59 +122,62 @@ void Density::cacheData() {
   assert(not inputs.empty());
 
   // step 1: load particle file
-
   ioMgr->init(input_hacc, comm);
   ioMgr->saveParams();
   ioMgr->setSave(true);
 
-  std::string const columns[] = {"x", "y", "z", "vx", "vy", "vz", "id" };
-
   if (master_rank)
     std::cout << "Caching particle data ... " << std::flush;
 
-  for (int i = 0; i < 7; ++i) {
-    if (ioMgr->load(columns[i])) {
+  std::string const columns[] = {"x", "y", "z", "vx", "vy", "vz", "id"};
 
-      // retrieve debug infos
+  for (int i = 0; i < dim; ++i) {
+    if (ioMgr->load(columns[i])) {
       if (master_rank) {
         std::cout << ioMgr->getDataInfo();
         std::cout << ioMgr->getLog();
       }
+      if (i == 0)
+        local_particles = ioMgr->getNumElements();
 
-      // store actual data
-      auto const n = ioMgr->getNumElements();
-      if (i < 6) {
-        auto const data = static_cast<float*>(ioMgr->data);
-        if (i < 3) {
-          coords[i].resize(n);
-          std::copy(data, data + n, coords[i].data());
-        } else {
-          velocs[i].resize(n);
-          std::copy(data, data + n, velocs[i].data());
-        }
-      } else {
-        auto const data = static_cast<long*>(ioMgr->data);
-        index.resize(n);
-        std::copy(data, data + n, index.data());
-      }
-
-      // finalize
+      auto const n = local_particles;
+      auto const data = static_cast<float*>(ioMgr->data);
+      coords[i].resize(n);
+      std::copy(data, data + n, coords[i].data());
       ioMgr->close();
     }
     MPI_Barrier(comm);
   }
 
-  // update particle count
-  local_particles = ioMgr->getNumElements();
+  // update particle count and coordinates data extents
   MPI_Allreduce(&local_particles, &total_particles, 1, MPI_LONG, MPI_SUM, comm);
 
-  // cache data extents
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < dim; ++i) {
     coords_min[i] = static_cast<float>(ioMgr->data_extents[i].first);
     coords_max[i] = static_cast<float>(ioMgr->data_extents[i].second);
   }
 
+  for (int i = 0; i < dim; ++i) {
+    if (ioMgr->load(columns[i + dim])) {
+      auto const n = ioMgr->getNumElements();
+      auto const data = static_cast<float*>(ioMgr->data);
+      velocs[i].resize(n);
+      std::copy(data, data + n, velocs[i].data());
+      ioMgr->close();
+    }
+    MPI_Barrier(comm);
+  }
+
+  if (ioMgr->load(columns[dim * 2])) {
+    auto const n = ioMgr->getNumElements();
+    auto const data = static_cast<long*>(ioMgr->data);
+    index.resize(n);
+    std::copy(data, data + n, index.data());
+    ioMgr->close();
+  }
+
   MPI_Barrier(comm);
+
   if (master_rank) {
     std::cout << "done." << std::endl;
     std::cout << "Caching density data ... " << std::flush;
@@ -337,16 +340,14 @@ void Density::bucketParticles() {
     auto const density_index = deduceDensityIndex(particle);
     assert(density_index < local_rho_count);
     auto const bucket_index  = deduceBucketIndex(density_field[density_index]);
-   // if (my_rank == 0)
-   //   std::cout << "density_index: " << density_index << ", bucket_index: " << bucket_index << std::endl;
     assert(bucket_index < nb_bins);
     // copy data in correct bucket
-    //buckets[bucket_index].emplace_back(i);
+    buckets[bucket_index].emplace_back(i);
   }
 
   MPI_Barrier(comm);
 
-  //dumpBucketDistrib();
+  dumpBucketDistrib();
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
@@ -544,15 +545,13 @@ void Density::run() {
 
   // step 1: load current rank dataset in memory
   cacheData();
-
-  // step 2: compute frequencies and histogram
-  computeFrequencies();
-
-  // step 3: bucket particles
-  bucketParticles();
-
   MPI_Barrier(comm);
 
+  // step 2: compute frequencies and histogram
+ // computeFrequencies();
+
+  // step 3: bucket particles
+  //bucketParticles();
 
 
 //  // inflate and deflate bucketed data

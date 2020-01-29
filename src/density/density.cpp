@@ -338,8 +338,10 @@ void Density::bucketParticles() {
     auto const bucket_index  = deduceBucketIndex(density_field[density_index]);
     assert(bucket_index < nb_bins);
     // copy data in correct bucket
-    buckets[bucket_index].push_back(i);
+    buckets[bucket_index].emplace_back(i);
   }
+
+  MPI_Barrier(comm);
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;

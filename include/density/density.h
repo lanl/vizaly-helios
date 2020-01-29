@@ -55,10 +55,11 @@ public:
 
 private:
 
-  bool cacheData();
+  void cacheData();
   void computeFrequencies();
   void dumpHistogram();
-  void setCompressionFactors();
+  void setNumberBits();
+  void releaseMemory();
 
   // particle to density field mapping methods
   long deduceDensityIndex(const float* particle) const;
@@ -72,9 +73,10 @@ private:
   // IO
   std::string json_path;
   std::string input_hacc;
-  std::vector<std::pair<std::string,long>> inputs;    // local to this rank
+  std::string output_hacc;
   std::string output_plot;
   std::unique_ptr<HACCDataLoader> ioMgr;
+  std::vector<std::pair<std::string,long>> inputs;    // local to this rank
 
   // particle meta-data
   int cells_per_axis = 0;                // cartesian grid
@@ -99,7 +101,8 @@ private:
   std::vector<long> histogram;                     // size: nb_bins
   std::vector<std::vector<long>> buckets;          // size: nb_bins
   std::vector<int> bits;                           // size: nb_bins
-  std::vector<float> decompressed[2 * dim];
+  std::vector<long> index;                         // size: local_particles
+  std::vector<float> decompressed[2 * dim];        // size: local_particles
 
   // MPI
   int my_rank  = 0;

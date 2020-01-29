@@ -1,5 +1,8 @@
 {
-  "particles": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
+  "hacc": {
+    "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
+    "output": "/home/hoby/dev/exasky/data"
+  },
   "density": {
     "inputs": [
       { "data": "/home/hoby/dev/exasky/hacc/run/density.000.rho.raw", "count": 134217728 },

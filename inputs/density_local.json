@@ -1,5 +1,8 @@
 {
-  "particles": "/Users/hoby/dev/exasky/helios/tests/data.reduced.mpicosmo",
+  "hacc": {
+    "input": "/Users/hoby/dev/exasky/helios/tests/data.reduced.mpicosmo",
+    "output": "/Users/hoby/dev/exasky/helios/data"
+  },
   "density": {
     "inputs": [
       { "data": "/Users/hoby/dev/exasky/helios/inputs/density.000.rho.raw", "count": 134217728 },

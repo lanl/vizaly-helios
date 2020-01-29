@@ -48,7 +48,10 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   // parse params and do basic checks
   file >> json;
 
-  assert(json.count("particles"));
+  assert(json.count("hacc"));
+  assert(json["hacc"].count("input"));
+  assert(json["hacc"].count("output"));
+
   assert(json.count("density"));
   assert(json["density"].count("inputs"));
   assert(json["density"].count("extents"));
@@ -95,111 +98,106 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   histogram.resize(nb_bins);
   buckets.resize(nb_bins);
   bits.resize(nb_bins);
-  setCompressionFactors();
+  setNumberBits();
 
   // set the HACC IO manager
   ioMgr = std::make_unique<HACCDataLoader>();
-  input_hacc = json["particles"];
+  input_hacc  = json["hacc"]["input"];
+  output_hacc = json["hacc"]["output"];
 
 }
 
 /* -------------------------------------------------------------------------- */
-bool Density::cacheData() {
+void Density::cacheData() {
 
   bool const master_rank = (my_rank == 0);
 
+  assert(not input_hacc.empty());
+  assert(not inputs.empty());
+
   // step 1: load particle file
-  if (not input_hacc.empty()) {
 
-    ioMgr->init(input_hacc, comm);
-    ioMgr->saveParams();
-    ioMgr->setSave(true);
+  ioMgr->init(input_hacc, comm);
+  ioMgr->saveParams();
+  ioMgr->setSave(true);
 
-    std::string const coordinates[] = {"x", "y", "z" };
-    std::string const velocities[] = {"vx", "vy", "vz"};
+  std::string const columns[] = {"x", "y", "z", "vx", "vy", "vz", "id" };
 
-    if (master_rank)
-      std::cout << "Caching particle data ... " << std::flush;
+  if (master_rank)
+    std::cout << "Caching particle data ... " << std::flush;
 
-    for (int i = 0; i < 3; ++i) {
-      if (ioMgr->load(coordinates[i])) {
-        // retrieve debug infos
-        if (master_rank) {
-          std::cout << ioMgr->getDataInfo();
-          std::cout << ioMgr->getLog();
+  for (int i = 0; i < 7; ++i) {
+    if (ioMgr->load(columns[i])) {
+
+      // retrieve debug infos
+      if (master_rank and i < 3) {
+        std::cout << ioMgr->getDataInfo();
+        std::cout << ioMgr->getLog();
+      }
+
+      // store actual data
+      auto const n = ioMgr->getNumElements();
+      if (columns[i] != "id") {
+        auto const data = static_cast<float*>(ioMgr->data);
+        if (i < 3) {
+          coords[i].resize(n);
+          std::copy(data, data + n, coords[i].data());
+        } else {
+          velocs[i].resize(n);
+          std::copy(data, data + n, velocs[i].data());
         }
-        // store actual data
-        auto const n = ioMgr->getNumElements();
-        auto const data = static_cast<float*>(ioMgr->data);
-        coords[i].resize(n);
-        std::copy(data, data + n, coords[i].data());
-        // finalize
-        ioMgr->close();
+      } else {
+        auto const data = static_cast<long*>(ioMgr->data);
+        index.resize(n);
+        std::copy(data, data + n, index.data());
       }
-      MPI_Barrier(comm);
+
+      // finalize
+      ioMgr->close();
     }
+    MPI_Barrier(comm);
+  }
 
-    // update particle count
-    local_particles = ioMgr->getNumElements();
-    MPI_Allreduce(&local_particles, &total_particles, 1, MPI_LONG, MPI_SUM, comm);
+  // update particle count
+  local_particles = ioMgr->getNumElements();
+  MPI_Allreduce(&local_particles, &total_particles, 1, MPI_LONG, MPI_SUM, comm);
 
-    // cache data extents
-    for (int i = 0; i < 3; ++i) {
-      coords_min[i] = static_cast<float>(ioMgr->data_extents[i].first);
-      coords_max[i] = static_cast<float>(ioMgr->data_extents[i].second);
-    }
+  // cache data extents
+  for (int i = 0; i < 3; ++i) {
+    coords_min[i] = static_cast<float>(ioMgr->data_extents[i].first);
+    coords_max[i] = static_cast<float>(ioMgr->data_extents[i].second);
+  }
 
-    // cache velocity components now
-    for (int i = 0; i < 3; ++i) {
-      if (ioMgr->load(velocities[i])) {
-        // store actual data
-        auto const n = ioMgr->getNumElements();
-        auto const data = static_cast<float*>(ioMgr->data);
-        velocs[i].resize(n);
-        std::copy(data, data + n, velocs[i].data());
-        // finalize
-        ioMgr->close();
-      }
-      MPI_Barrier(comm);
-    }
-
-    if (master_rank)
-      std::cout << "done." << std::endl;
+  if (master_rank) {
+    std::cout << "done." << std::endl;
+    std::cout << "Caching density data ... " << std::flush;
   }
 
   // step 2: load density file
-  if (not inputs.empty()) {
+  long offset = 0;
+  long count = 0;
+  std::string path;
 
-    long offset = 0;
-    long count = 0;
-    std::string path;
+  for (auto&& current : inputs) {
+    std::tie(path, count) = current;
 
-    if (master_rank)
-      std::cout << "Caching density data ... " << std::flush;
+    std::ifstream file(path, std::ios::binary);
+    assert(file.good());
 
-    for (auto&& current : inputs) {
-      std::tie(path, count) = current;
+    auto buffer = reinterpret_cast<char *>(density_field.data() + offset);
+    auto size = count * sizeof(float);
 
-      std::ifstream file(path, std::ios::binary);
-      if (not file.good())
-        return false;
+    file.seekg(0, std::ios::beg);
+    file.read(buffer, size);
+    file.close();
 
-      auto buffer = reinterpret_cast<char *>(density_field.data() + offset);
-      auto size = count * sizeof(float);
-
-      file.seekg(0, std::ios::beg);
-      file.read(buffer, size);
-      file.close();
-
-      // update offset
-      offset += count;
-    }
-
-    if (master_rank)
-      std::cout << "done." << std::endl;
+    // update offset
+    offset += count;
   }
 
-  return true;
+  if (master_rank)
+    std::cout << "done." << std::endl;
+
 }
 
 
@@ -335,7 +333,7 @@ void Density::dumpHistogram() {
 }
 
 /* -------------------------------------------------------------------------- */
-void Density::setCompressionFactors() {
+void Density::setNumberBits() {
 
   // temporary
   bits[0] = 22;
@@ -354,8 +352,8 @@ std::vector<float> Density::process(std::vector<float> const& data) {
     std::cout << "Inflate and deflate data ... " << std::endl;
 
   auto kernel = CompressorFactory::create("fpzip");
-  unsigned long local_bytes[] = {0, 0};
-  unsigned long total_bytes[] = {0, 0};
+  size_t local_bytes[] = {0, 0};
+  size_t total_bytes[] = {0, 0};
 
   std::vector<float> dataset;
   std::vector<float> recovered;
@@ -406,7 +404,69 @@ std::vector<float> Density::process(std::vector<float> const& data) {
 }
 
 /* -------------------------------------------------------------------------- */
-void Density::dump() {/* TODO */}
+void Density::dump() {
+
+  if (my_rank == 0)
+    std::cout << "Dumping dataset ... " << std::flush;
+
+  // step 1: sort particles indices
+  std::vector<long> sorted_indices;
+  sorted_indices.reserve(local_particles);
+
+  for (auto&& bucket : buckets) {
+    for (auto&& i : bucket) {
+      sorted_indices.emplace_back(i);
+    }
+  }
+  // release memory
+  index.clear();
+  index.shrink_to_fit();
+  MPI_Barrier(comm);
+
+  // step 2: prepare dataset partition and header
+  int periods[3] = {0, 0, 0};
+  auto dim_size = ioMgr->mpi_partition;
+  MPI_Cart_create(comm, 3, dim_size, periods, 0, &comm);
+
+  // init writer and open file
+  gio::GenericIO gioWriter(comm, output_hacc);
+  gioWriter.setNumElems(local_particles);
+
+  // init physical params
+  for (int d = 0; d < 3; ++d) {
+    gioWriter.setPhysOrigin(ioMgr->phys_orig[d], d);
+    gioWriter.setPhysScale(ioMgr->phys_scale[d], d);
+  }
+
+  MPI_Barrier(comm);
+
+  unsigned const flags[] = {
+    gio::GenericIO::VarHasExtraSpace,
+    gio::GenericIO::VarHasExtraSpace|gio::GenericIO::VarIsPhysCoordX,
+    gio::GenericIO::VarHasExtraSpace|gio::GenericIO::VarIsPhysCoordY,
+    gio::GenericIO::VarHasExtraSpace|gio::GenericIO::VarIsPhysCoordZ
+  };
+
+  gioWriter.addVariable( "x", decompressed[0].data(), flags[1]);
+  gioWriter.addVariable( "y", decompressed[1].data(), flags[2]);
+  gioWriter.addVariable( "z", decompressed[2].data(), flags[3]);
+  gioWriter.addVariable("vx", decompressed[3].data(), flags[0]);
+  gioWriter.addVariable("vy", decompressed[4].data(), flags[0]);
+  gioWriter.addVariable("vz", decompressed[5].data(), flags[0]);
+  gioWriter.addVariable("id", sorted_indices.data(), flags[0]);
+  gioWriter.write();
+
+  // release memory
+  for (auto& dataset : decompressed) {
+    dataset.clear();
+    dataset.shrink_to_fit();
+  }
+
+  MPI_Barrier(comm);
+
+  if (my_rank == 0)
+    std::cout << " done." << std::endl;
+}
 
 /* -------------------------------------------------------------------------- */
 void Density::run() {
@@ -421,10 +481,12 @@ void Density::run() {
   bucketParticles();
 
   // inflate and deflate bucketed data
-  for (int i = 0; i < dim; ++i) {
-    decompressed[i] = process(coords[i]);
-    decompressed[i+dim] = process(velocs[i]);
-  }
+  decompressed[0] = process(coords[0]);
+  decompressed[1] = process(coords[1]);
+  decompressed[2] = process(coords[2]);
+  decompressed[3] = process(velocs[0]);
+  decompressed[4] = process(velocs[1]);
+  decompressed[5] = process(velocs[2]);
 
   // dump them
   dump();

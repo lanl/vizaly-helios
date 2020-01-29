@@ -237,12 +237,12 @@ void Density::computeFrequencies() {
 
   for (auto k = 0; k < local_rho_count; ++k) {
     double relative_value = (density_field[k] - total_rho_min) / range;
-    int index = static_cast<int>((range * relative_value) / capacity);
+    int bin_index = static_cast<int>((range * relative_value) / capacity);
 
-    if (index >= nb_bins)
-      index--;
+    if (bin_index >= nb_bins)
+      bin_index--;
 
-    local_histo[index]++;
+    local_histo[bin_index]++;
   }
 
   MPI_Allreduce(local_histo, total_histo, nb_bins, MPI_LONG, MPI_SUM, comm);

@@ -344,9 +344,21 @@ void Density::setNumberBits() {
 }
 
 /* -------------------------------------------------------------------------- */
-std::vector<float> Density::process(std::vector<float> const& data) {
+void Density::process(int step) {
 
+  assert(step < 6);
   assert(not buckets.empty());
+
+  float* data = nullptr;
+  switch (step) {
+    case 0: data = coords[0].data(); break;
+    case 1: data = coords[1].data(); break;
+    case 2: data = coords[2].data(); break;
+    case 3: data = velocs[0].data(); break;
+    case 4: data = velocs[1].data(); break;
+    case 5: data = velocs[2].data(); break;
+    default: break;
+  }
 
   if (my_rank == 0)
     std::cout << "Inflate and deflate data ... " << std::endl;
@@ -356,22 +368,21 @@ std::vector<float> Density::process(std::vector<float> const& data) {
   size_t total_bytes[] = {0, 0};
 
   std::vector<float> dataset;
-  std::vector<float> recovered;
-  recovered.reserve(local_particles);
+  decompressed[step].reserve(local_particles);
 
   for (int j = 0; j < nb_bins; ++j) {
-    // step 1: create dataset according to computed bin.
+    // retrieve number of particles for this bucket
     auto nb_elems = buckets[j].size();
-    dataset.reserve(nb_elems);
 
+    // step 1: create dataset according to computed bin.
+    dataset.reserve(nb_elems);
     for (auto&& particle_index : buckets[j])
       dataset.emplace_back(data[particle_index]);
 
-    // step 2: compress agregated dataset
+    // step 2: inflate agregated dataset and release memory
     void* raw_inflate = nullptr;
     void* raw_deflate = nullptr;
 
-    // inflate dataset and release memory immediately
     kernel->parameters["bits"] = std::to_string(bits[j]);
     kernel->compress(dataset.data(), raw_inflate, "float", sizeof(float), &nb_elems);
     dataset.clear();
@@ -380,10 +391,10 @@ std::vector<float> Density::process(std::vector<float> const& data) {
     local_bytes[0] += kernel->getBytes();
     local_bytes[1] += nb_elems * sizeof(float);
 
-    // decompress data and store it
+    // step 3: deflate data and store it
     kernel->decompress(raw_inflate, raw_deflate, "float", sizeof(float), &nb_elems);
     for (int k = 0; k < nb_elems; ++k)
-      recovered.emplace_back(static_cast<float*>(raw_deflate)[k]);
+      decompressed[step].emplace_back(static_cast<float*>(raw_deflate)[k]);
   }
 
   MPI_Barrier(comm);
@@ -398,9 +409,17 @@ std::vector<float> Density::process(std::vector<float> const& data) {
     std::cout << "done" << std::endl;
   }
 
+  switch (step) {
+    case 0: coords[0].clear(); coords[0].shrink_to_fit(); break;
+    case 1: coords[1].clear(); coords[1].shrink_to_fit(); break;
+    case 2: coords[2].clear(); coords[2].shrink_to_fit(); break;
+    case 3: velocs[0].clear(); velocs[0].shrink_to_fit(); break;
+    case 4: velocs[1].clear(); velocs[1].shrink_to_fit(); break;
+    case 5: velocs[2].clear(); velocs[2].shrink_to_fit(); break;
+    default: break;
+  }
+
   MPI_Barrier(comm);
-  // enforce zero-copy on return value
-  return std::move(recovered);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -408,6 +427,14 @@ void Density::dump() {
 
   if (my_rank == 0)
     std::cout << "Dumping dataset ... " << std::flush;
+
+  // step 0: ease memory pressure by releasing unused data
+  density_field.clear();
+  density_field.shrink_to_fit();
+  histogram.clear();
+  histogram.shrink_to_fit();
+  bits.clear();
+  bits.shrink_to_fit();
 
   // step 1: sort particles indices
   std::vector<long> sorted_indices;
@@ -421,6 +448,8 @@ void Density::dump() {
   // release memory
   index.clear();
   index.shrink_to_fit();
+  buckets.clear();
+  buckets.shrink_to_fit();
   MPI_Barrier(comm);
 
   // step 2: prepare dataset partition and header
@@ -481,12 +510,8 @@ void Density::run() {
   bucketParticles();
 
   // inflate and deflate bucketed data
-  decompressed[0] = process(coords[0]);
-  decompressed[1] = process(coords[1]);
-  decompressed[2] = process(coords[2]);
-  decompressed[3] = process(velocs[0]);
-  decompressed[4] = process(velocs[1]);
-  decompressed[5] = process(velocs[2]);
+  for (int step = 0; step < 6; ++step)
+    process(step);
 
   // dump them
   dump();

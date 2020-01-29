@@ -59,13 +59,12 @@ private:
   void computeFrequencies();
   void dumpHistogram();
   void setNumberBits();
-  void releaseMemory();
 
   // particle to density field mapping methods
   long deduceDensityIndex(const float* particle) const;
   int deduceBucketIndex(float const& rho) const;
   void bucketParticles();
-  std::vector<float> process(std::vector<float> const& data);
+  void process(int step);
   void dump();
 
   static int const dim = 3;

@@ -58,6 +58,7 @@ private:
   void cacheData();
   void computeFrequencies();
   void dumpHistogram();
+  void dumpBucketDistrib();
   void setNumberBits();
 
   // particle to density field mapping methods
@@ -74,6 +75,7 @@ private:
   std::string input_hacc;
   std::string output_hacc;
   std::string output_plot;
+  std::string output_bucket;
   std::unique_ptr<HACCDataLoader> ioMgr;
   std::vector<std::pair<std::string,long>> inputs;    // local to this rank
 

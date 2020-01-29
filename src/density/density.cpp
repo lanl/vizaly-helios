@@ -58,7 +58,10 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));
   assert(json["density"].count("nb_bins"));
-  assert(json["density"].count("plots"));
+
+  assert(json.count("plots"));
+  assert(json["plots"].count("density"));
+  assert(json["plots"].count("buckets"));
 
   // retrieve number of cells per axis
   int const c_min = json["density"]["extents"]["min"];
@@ -91,7 +94,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   } else
     throw std::runtime_error("mismatch on number of ranks and data partition");
 
-  output_plot = json["density"]["plots"];
   nb_bins = json["density"]["bins"];
   assert(nb_bins > 0);
 
@@ -99,6 +101,10 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   buckets.resize(nb_bins);
   bits.resize(nb_bins);
   setNumberBits();
+
+  // plots
+  output_plot = json["plots"]["density"];
+  output_bucket = json["plots"]["buckets"];
 
   // set the HACC IO manager
   ioMgr = std::make_unique<HACCDataLoader>();
@@ -337,13 +343,32 @@ void Density::bucketParticles() {
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
+    dumpBucketDistrib();
     // for debug purposes
-    auto const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
-    for (int i = 0; i < nb_bins; ++i) {
-      auto const rho_max = total_rho_min + (i * width);
-      std::printf("bucket[%d]: rho_max=%.f, nb_particles=%lu\n", i, rho_max, buckets[i].size());
-    }
+//    auto const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
+//    for (int i = 0; i < nb_bins; ++i) {
+//      auto const rho_max = total_rho_min + (i * width);
+//      std::printf("bucket[%d]: rho_max=%.f, nb_particles=%lu\n", i, rho_max, buckets[i].size());
+//    }
   }
+}
+
+/* -------------------------------------------------------------------------- */
+void Density::dumpBucketDistrib() {
+
+  std::ofstream file(output_bucket + ".dat", std::ios::trunc);
+  assert(file.is_open());
+  assert(file.good());
+
+  file << "# bins: " << std::to_string(nb_bins) << std::endl;
+  file << "# col 1: bin " << std::endl;
+  file << "# col 2: particle count" << std::endl;
+
+  for (int i = 0; i < nb_bins; ++i) {
+    file << i << "\t" << buckets[i].size() << std::endl;
+  }
+
+  file.close();
 }
 
 /* -------------------------------------------------------------------------- */

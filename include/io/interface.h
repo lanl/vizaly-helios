@@ -37,6 +37,7 @@
 #include <mpi.h>
 #include "data.h"
 #include "utils/json.h"
+#include "utils/tools.h"
 /* -------------------------------------------------------------------------- */
 class DataLoaderInterface {
 

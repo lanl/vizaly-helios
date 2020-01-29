@@ -279,9 +279,9 @@ int Density::deduceBucketIndex(float const& rho) const {
 
   assert(rho < total_rho_max);
   auto const coef = rho / (local_rho_max - local_rho_min);
-  auto const index = std::max(static_cast<int>(std::ceil(coef * float(nb_bins))) - 1, 0);
-  assert(index < nb_bins);
-  return index;
+  auto const bucket_index = std::max(static_cast<int>(std::ceil(coef * float(nb_bins))) - 1, 0);
+  assert(bucket_index < nb_bins);
+  return bucket_index;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -296,9 +296,6 @@ void Density::bucketParticles() {
     // copy data in correct bucket
     buckets[bucket_index].push_back(i);
   }
-
-  for (auto&& current : buckets)
-    current.shrink_to_fit();
 
   // for debug purposes
   if (my_rank == 0) {

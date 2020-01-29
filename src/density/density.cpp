@@ -343,9 +343,10 @@ void Density::bucketParticles() {
 
   MPI_Barrier(comm);
 
+  dumpBucketDistrib();
+
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
-    dumpBucketDistrib();
     // for debug purposes
 //    auto const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
 //    for (int i = 0; i < nb_bins; ++i) {
@@ -358,19 +359,27 @@ void Density::bucketParticles() {
 /* -------------------------------------------------------------------------- */
 void Density::dumpBucketDistrib() {
 
-  std::ofstream file(output_bucket + ".dat", std::ios::trunc);
-  assert(file.is_open());
-  assert(file.good());
+  long local_count[nb_bins];
+  long total_count[nb_bins];
+  for (int i = 0; i < nb_bins; ++i)
+    local_count[i] = buckets[i].size();
 
-  file << "# bins: " << std::to_string(nb_bins) << std::endl;
-  file << "# col 1: bin " << std::endl;
-  file << "# col 2: particle count" << std::endl;
+  MPI_Reduce(local_count, total_count, nb_bins, MPI_LONG, MPI_SUM, 0, comm);
 
-  for (int i = 0; i < nb_bins; ++i) {
-    file << i << "\t" << buckets[i].size() << std::endl;
+  if (my_rank == 0) {
+    std::ofstream file(output_bucket + ".dat", std::ios::trunc);
+    assert(file.is_open());
+    assert(file.good());
+
+    file << "# bins: " << std::to_string(nb_bins) << std::endl;
+    file << "# col 1: bin " << std::endl;
+    file << "# col 2: particle count" << std::endl;
+    for (int i = 0; i < nb_bins; ++i)
+      file << i << "\t" << total_count[i] << std::endl;
+    file.close();
   }
 
-  file.close();
+  MPI_Barrier(comm);
 }
 
 /* -------------------------------------------------------------------------- */

@@ -22,5 +22,6 @@ set format y "10^{%2T}"
 
 set grid mytics xtics
 set logscale y 10
+set logscale x 2
 
 plot 'bucket_distrib.dat' using 1:2 notitle lc rgb colors[1] with boxes

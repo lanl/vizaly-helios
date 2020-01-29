@@ -130,9 +130,10 @@ void Density::cacheData() {
     if (ioMgr->load(columns[i])) {
 
       // retrieve debug infos
-      if (master_rank and i < 3) {
+      if (master_rank) {
         std::cout << ioMgr->getDataInfo();
-        std::cout << ioMgr->getLog();
+        if (i == 0)
+          std::cout << ioMgr->getLog();
       }
 
       // store actual data
@@ -253,6 +254,40 @@ void Density::computeFrequencies() {
 }
 
 /* -------------------------------------------------------------------------- */
+void Density::dumpHistogram() {
+
+  double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
+
+  std::ofstream file(output_plot + ".dat", std::ios::trunc);
+  assert(file.is_open());
+  assert(file.good());
+
+  file << "# bins: " << std::to_string(nb_bins) << std::endl;
+  file << "# col 1: density range" << std::endl;
+  file << "# col 2: particle count" << std::endl;
+
+  int k = 1;
+  for (auto&& value : histogram) {
+    file << total_rho_min + (k * width) << "\t" << value << std::endl;
+    k++;
+  }
+
+  file.close();
+}
+
+
+/* -------------------------------------------------------------------------- */
+void Density::setNumberBits() {
+
+  // temporary
+  bits[0] = 22;
+  for (int i =   1; i <  20; ++i) bits[i] = 23;
+  for (int i =  20; i <  50; ++i) bits[i] = 24;
+  for (int i =  50; i < 100; ++i) bits[i] = 25;
+  for (int i = 100; i < nb_bins; ++i) bits[i] = 26;
+}
+
+/* -------------------------------------------------------------------------- */
 long Density::deduceDensityIndex(const float* particle) const {
 
   float range[3];
@@ -279,13 +314,16 @@ int Density::deduceBucketIndex(float const& rho) const {
 
   assert(rho < total_rho_max);
   auto const coef = rho / (local_rho_max - local_rho_min);
-  auto const bucket_index = std::max(static_cast<int>(std::ceil(coef * float(nb_bins))) - 1, 0);
+  auto const bucket_index = std::max(static_cast<int>(std::ceil(coef * float(nb_bins))), 0);
   assert(bucket_index < nb_bins);
   return bucket_index;
 }
 
 /* -------------------------------------------------------------------------- */
 void Density::bucketParticles() {
+
+  if (my_rank == 0)
+    std::cout << "Bucketing particles ... " << std::flush;
 
   for (int i = 0; i < local_particles; ++i) {
     float particle[] = { coords[0][i], coords[1][i], coords[2][i] };
@@ -297,47 +335,15 @@ void Density::bucketParticles() {
     buckets[bucket_index].push_back(i);
   }
 
-  // for debug purposes
   if (my_rank == 0) {
+    std::cout << "done" << std::endl;
+    // for debug purposes
     auto const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
     for (int i = 0; i < nb_bins; ++i) {
       auto const rho_max = total_rho_min + (i * width);
       std::printf("bucket[%d]: rho_max=%.f, nb_particles=%lu\n", i, rho_max, buckets[i].size());
     }
   }
-}
-
-/* -------------------------------------------------------------------------- */
-void Density::dumpHistogram() {
-
-  double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
-
-  std::ofstream file(output_plot + ".dat", std::ios::trunc);
-  assert(file.is_open());
-  assert(file.good());
-
-  file << "# bins: " << std::to_string(nb_bins) << std::endl;
-  file << "# col 1: density range" << std::endl;
-  file << "# col 2: particle count" << std::endl;
-
-  int k = 1;
-  for (auto&& value : histogram) {
-    file << total_rho_min + (k * width) << "\t" << value << std::endl;
-    k++;
-  }
-
-  file.close();
-}
-
-/* -------------------------------------------------------------------------- */
-void Density::setNumberBits() {
-
-  // temporary
-  bits[0] = 22;
-  for (int i =   1; i <  20; ++i) bits[i] = 23;
-  for (int i =  20; i <  50; ++i) bits[i] = 24;
-  for (int i =  50; i < 100; ++i) bits[i] = 25;
-  for (int i = 100; i < nb_bins; ++i) bits[i] = 26;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -358,7 +364,7 @@ void Density::process(int step) {
   }
 
   if (my_rank == 0)
-    std::cout << "Inflate and deflate data ... " << std::endl;
+    std::cout << "Inflate and deflate data ... " << std::flush;
 
   auto kernel = CompressorFactory::create("fpzip");
   size_t local_bytes[] = {0, 0};
@@ -399,11 +405,11 @@ void Density::process(int step) {
   MPI_Allreduce(local_bytes+1, total_bytes+1, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
 
   if (my_rank == 0) {
+    std::cout << "done" << std::endl;
     auto const compression_ratio = static_cast<float>(total_bytes[1]) / static_cast<float>(total_bytes[0]);
     std::cout << "= total inflate size: " << total_bytes[0] << std::endl;
     std::cout << "= total deflate size: " << total_bytes[1] << std::endl;
     std::cout << "= compression ratio: " << compression_ratio << std::endl;
-    std::cout << "done" << std::endl;
   }
 
   switch (step) {

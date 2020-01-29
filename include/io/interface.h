@@ -60,7 +60,7 @@ public:
     std::stringstream info;
     info << std::endl;
     info << "Loader type: " << loader << std::endl;
-    info << "Filename: " << filename << std::endl;
+    info << "Filename: " << tools::base(filename) << std::endl;
     info << "Total number of elements: " << total_nb_elems << std::endl;
     info << "Param: " << param << std::endl;
     info << "dataType: " << gio::to_string(data_type) << std::endl;

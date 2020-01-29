@@ -336,16 +336,16 @@ void Density::bucketParticles() {
     auto const density_index = deduceDensityIndex(particle);
     assert(density_index < local_rho_count);
     auto const bucket_index  = deduceBucketIndex(density_field[density_index]);
-    if (my_rank == 0)
-      std::cout << "density_index: " << density_index << ", bucket_index: " << bucket_index << std::endl;
+   // if (my_rank == 0)
+   //   std::cout << "density_index: " << density_index << ", bucket_index: " << bucket_index << std::endl;
     assert(bucket_index < nb_bins);
     // copy data in correct bucket
-    buckets[bucket_index].emplace_back(i);
+    //buckets[bucket_index].emplace_back(i);
   }
 
   MPI_Barrier(comm);
 
-  dumpBucketDistrib();
+  //dumpBucketDistrib();
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
@@ -550,12 +550,12 @@ void Density::run() {
   // step 3: bucket particles
   bucketParticles();
 
-  // inflate and deflate bucketed data
-  for (int step = 0; step < 6; ++step)
-    process(step);
-
-  // dump them
-  dump();
+//  // inflate and deflate bucketed data
+//  for (int step = 0; step < 6; ++step)
+//    process(step);
+//
+//  // dump them
+//  dump();
 }
 
 /* -------------------------------------------------------------------------- */

@@ -358,9 +358,8 @@ std::vector<float> Density::process(std::vector<float> const& data) {
   unsigned long total_bytes[] = {0, 0};
 
   std::vector<float> dataset;
-  std::vector<float> decompressed;
-
-  decompressed.reserve(local_particles);
+  std::vector<float> recovered;
+  recovered.reserve(local_particles);
 
   for (int j = 0; j < nb_bins; ++j) {
     // step 1: create dataset according to computed bin.
@@ -386,7 +385,7 @@ std::vector<float> Density::process(std::vector<float> const& data) {
     // decompress data and store it
     kernel->decompress(raw_inflate, raw_deflate, "float", sizeof(float), &nb_elems);
     for (int k = 0; k < nb_elems; ++k)
-      decompressed.emplace_back(static_cast<float*>(raw_deflate)[k]);
+      recovered.emplace_back(static_cast<float*>(raw_deflate)[k]);
   }
 
   MPI_Barrier(comm);
@@ -402,7 +401,8 @@ std::vector<float> Density::process(std::vector<float> const& data) {
   }
 
   MPI_Barrier(comm);
-  return decompressed;
+  // enforce zero-copy on return value
+  return std::move(recovered);
 }
 
 /* -------------------------------------------------------------------------- */

@@ -94,10 +94,13 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 
   histogram.resize(nb_bins);
   buckets.resize(nb_bins);
+  bits.resize(nb_bins);
+  setCompressionFactors();
 
   // set the HACC IO manager
   ioMgr = std::make_unique<HACCDataLoader>();
   input_hacc = json["particles"];
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -130,6 +133,8 @@ bool Density::cacheData() {
         auto const data = static_cast<float*>(ioMgr->data);
         coords[i].resize(n);
         std::copy(data, data + n, coords[i].data());
+        // finalize
+        ioMgr->close();
       }
       MPI_Barrier(comm);
     }
@@ -145,17 +150,18 @@ bool Density::cacheData() {
     }
 
     // cache velocity components now
-    /*
     for (int i = 0; i < 3; ++i) {
       if (ioMgr->load(velocities[i])) {
         // store actual data
         auto const n = ioMgr->getNumElements();
         auto const data = static_cast<float*>(ioMgr->data);
-        velocity[i].resize(n);
-        std::copy(data, data + n, velocity[i].data());
+        velocs[i].resize(n);
+        std::copy(data, data + n, velocs[i].data());
+        // finalize
+        ioMgr->close();
       }
       MPI_Barrier(comm);
-    }*/
+    }
 
     if (master_rank)
       std::cout << "done." << std::endl;
@@ -329,7 +335,75 @@ void Density::dumpHistogram() {
 }
 
 /* -------------------------------------------------------------------------- */
-void Density::inflate() {/* TODO */}
+void Density::setCompressionFactors() {
+
+  // temporary
+  bits[0] = 22;
+  for (int i =   1; i <  20; ++i) bits[i] = 23;
+  for (int i =  20; i <  50; ++i) bits[i] = 24;
+  for (int i =  50; i < 100; ++i) bits[i] = 25;
+  for (int i = 100; i < nb_bins; ++i) bits[i] = 26;
+}
+
+/* -------------------------------------------------------------------------- */
+std::vector<float> Density::process(std::vector<float> const& data) {
+
+  assert(not buckets.empty());
+
+  if (my_rank == 0)
+    std::cout << "Inflate and deflate data ... " << std::endl;
+
+  auto kernel = CompressorFactory::create("fpzip");
+  unsigned long local_bytes[] = {0, 0};
+  unsigned long total_bytes[] = {0, 0};
+
+  std::vector<float> dataset;
+  std::vector<float> decompressed;
+
+  decompressed.reserve(local_particles);
+
+  for (int j = 0; j < nb_bins; ++j) {
+    // step 1: create dataset according to computed bin.
+    auto nb_elems = buckets[j].size();
+    dataset.reserve(nb_elems);
+
+    for (auto&& particle_index : buckets[j])
+      dataset.emplace_back(data[particle_index]);
+
+    // step 2: compress agregated dataset
+    void* raw_inflate = nullptr;
+    void* raw_deflate = nullptr;
+
+    // inflate dataset and release memory immediately
+    kernel->parameters["bits"] = std::to_string(bits[j]);
+    kernel->compress(dataset.data(), raw_inflate, "float", sizeof(float), &nb_elems);
+    dataset.clear();
+
+    // update compression metrics
+    local_bytes[0] += kernel->getBytes();
+    local_bytes[1] += nb_elems * sizeof(float);
+
+    // decompress data and store it
+    kernel->decompress(raw_inflate, raw_deflate, "float", sizeof(float), &nb_elems);
+    for (int k = 0; k < nb_elems; ++k)
+      decompressed.emplace_back(static_cast<float*>(raw_deflate)[k]);
+  }
+
+  MPI_Barrier(comm);
+  MPI_Allreduce(local_bytes+0, total_bytes+0, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+  MPI_Allreduce(local_bytes+1, total_bytes+1, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+
+  if (my_rank == 0) {
+    auto const compression_ratio = static_cast<float>(total_bytes[1]) / static_cast<float>(total_bytes[0]);
+    std::cout << "= total inflate size: " << total_bytes[0] << std::endl;
+    std::cout << "= total deflate size: " << total_bytes[1] << std::endl;
+    std::cout << "= compression ratio: " << compression_ratio << std::endl;
+    std::cout << "done" << std::endl;
+  }
+
+  MPI_Barrier(comm);
+  return decompressed;
+}
 
 /* -------------------------------------------------------------------------- */
 void Density::dump() {/* TODO */}
@@ -345,6 +419,15 @@ void Density::run() {
 
   // step 3: bucket particles
   bucketParticles();
+
+  // inflate and deflate bucketed data
+  for (int i = 0; i < dim; ++i) {
+    decompressed[i] = process(coords[i]);
+    decompressed[i+dim] = process(velocs[i]);
+  }
+
+  // dump them
+  dump();
 }
 
 /* -------------------------------------------------------------------------- */

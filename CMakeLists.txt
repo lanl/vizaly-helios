@@ -109,6 +109,7 @@ target_sources(noising PRIVATE
 target_sources(density PRIVATE
 		src/utils/tools.cpp
 		src/utils/memory.cpp
+		src/compressors/kernels/fpzip.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp
 		src/density/density.cpp
@@ -171,6 +172,10 @@ if (ENABLE_FPZIP)
 	target_compile_definitions(compress PRIVATE -DENABLE_FPZIP=1)
 	target_include_directories(compress PRIVATE ${FPZIP_INCLUDE_DIRS})
 	target_link_libraries(compress PRIVATE ${FPZIP_LIBRARIES})
+
+	target_compile_definitions(density PRIVATE -DENABLE_FPZIP=1)
+	target_include_directories(density PRIVATE ${FPZIP_INCLUDE_DIRS})
+	target_link_libraries(density PRIVATE ${FPZIP_LIBRARIES})
 endif()
 
 if (ENABLE_ISABELA)

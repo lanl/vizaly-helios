@@ -40,6 +40,7 @@
 #include "utils/tools.h"
 #include "io/interface.h"
 #include "io/hacc.h"
+#include <compressors/kernels/factory.h>
 /* -------------------------------------------------------------------------- */
 class Density {
 
@@ -62,8 +63,11 @@ private:
   long deduceDensityIndex(const float* particle) const;
   int deduceBucketIndex(float const& rho) const;
   void bucketParticles();
-  void inflate();
+  std::vector<float> process(std::vector<float> const& data);
+  void setCompressionFactors();
   void dump();
+
+  static int const dim = 3;
 
   // IO
   std::string json_path;
@@ -74,8 +78,8 @@ private:
 
   // particle meta-data
   int cells_per_axis = 0;                // cartesian grid
-  float coords_min[3] = { 0.,0.,0.};
-  float coords_max[3] = { 0.,0.,0.};
+  float coords_min[dim] = { 0.,0.,0.};
+  float coords_max[dim] = { 0.,0.,0.};
   long local_particles = 0;
   long total_particles = 0;
 
@@ -89,12 +93,13 @@ private:
   double total_rho_max = 0.;
 
   // actual datasets
-  std::vector<float> coords[3];                    // size: local_particles
-  std::vector<float> velocity[3];                  // size: local_particles
+  std::vector<float> coords[dim];                    // size: local_particles
+  std::vector<float> velocs[dim];                  // size: local_particles
   std::vector<float> density_field;                // size: local_rho_count
   std::vector<long> histogram;                     // size: nb_bins
-  std::vector<std::vector<long>> buckets;           // size: nb_bins
-  std::vector<int> compression_factor;             // size: nb_bins
+  std::vector<std::vector<long>> buckets;          // size: nb_bins
+  std::vector<int> bits;                           // size: nb_bins
+  std::vector<float> decompressed[dim * 2];
 
   // MPI
   int my_rank  = 0;

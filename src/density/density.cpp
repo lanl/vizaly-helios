@@ -114,6 +114,21 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 }
 
 /* -------------------------------------------------------------------------- */
+Density::~Density() {
+  for (int i = 0; i < dim; ++i) {
+    coords[i].clear();
+    velocs[i].clear();
+    density_field.clear();
+    histogram.clear();
+    buckets.clear();
+    bits.clear();
+    index.clear();
+    decompressed[i].clear();
+    decompressed[i * 2].clear();
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 void Density::cacheData() {
 
   bool const master_rank = (my_rank == 0);
@@ -549,6 +564,10 @@ void Density::run() {
 
   // step 3: bucket particles
   bucketParticles();
+
+  MPI_Barrier(comm);
+
+
 
 //  // inflate and deflate bucketed data
 //  for (int step = 0; step < 6; ++step)

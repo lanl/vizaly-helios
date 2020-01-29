@@ -349,15 +349,8 @@ void Density::bucketParticles() {
 
   dumpBucketDistrib();
 
-  if (my_rank == 0) {
+  if (my_rank == 0)
     std::cout << "done" << std::endl;
-    // for debug purposes
-//    auto const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
-//    for (int i = 0; i < nb_bins; ++i) {
-//      auto const rho_max = total_rho_min + (i * width);
-//      std::printf("bucket[%d]: rho_max=%.f, nb_particles=%lu\n", i, rho_max, buckets[i].size());
-//    }
-  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -406,50 +399,54 @@ void Density::process(int step) {
   if (my_rank == 0)
     std::cout << "Inflate and deflate data ... " << std::flush;
 
-  auto kernel = CompressorFactory::create("fpzip");
   size_t local_bytes[] = {0, 0};
   size_t total_bytes[] = {0, 0};
+  size_t nb_elems[] = {0, 0, 0, 0, 0};
 
   std::vector<float> dataset;
   decompressed[step].reserve(local_particles);
 
   for (int j = 0; j < nb_bins; ++j) {
+    if (buckets[j].empty())
+      continue;
+
     // retrieve number of particles for this bucket
-    auto nb_elems = buckets[j].size();
+    nb_elems[0] = buckets[j].size();
 
     // step 1: create dataset according to computed bin.
-    dataset.reserve(nb_elems);
+    dataset.reserve(nb_elems[0]);
     for (auto&& particle_index : buckets[j])
       dataset.emplace_back(data[particle_index]);
 
     // step 2: inflate agregated dataset and release memory
+    void* raw_data = static_cast<void*>(dataset.data());
     void* raw_inflate = nullptr;
     void* raw_deflate = nullptr;
 
+    auto kernel = CompressorFactory::create("fpzip");
+    kernel->init();
     kernel->parameters["bits"] = std::to_string(bits[j]);
-    kernel->compress(dataset.data(), raw_inflate, "float", sizeof(float), &nb_elems);
+    kernel->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
     dataset.clear();
 
     // update compression metrics
     local_bytes[0] += kernel->getBytes();
-    local_bytes[1] += nb_elems * sizeof(float);
 
     // step 3: deflate data and store it
-    kernel->decompress(raw_inflate, raw_deflate, "float", sizeof(float), &nb_elems);
-    for (int k = 0; k < nb_elems; ++k)
+    kernel->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
+    for (int k = 0; k < nb_elems[0]; ++k)
       decompressed[step].emplace_back(static_cast<float*>(raw_deflate)[k]);
   }
 
   MPI_Barrier(comm);
-  MPI_Allreduce(local_bytes+0, total_bytes+0, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
-  MPI_Allreduce(local_bytes+1, total_bytes+1, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+  MPI_Reduce(local_bytes, total_bytes, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
-    auto const compression_ratio = static_cast<float>(total_bytes[1]) / static_cast<float>(total_bytes[0]);
-    std::cout << "= total inflate size: " << total_bytes[0] << std::endl;
-    std::cout << "= total deflate size: " << total_bytes[1] << std::endl;
-    std::cout << "= compression ratio: " << compression_ratio << std::endl;
+    total_bytes[1] = total_particles * sizeof(float);
+    std::cout << "\ttotal inflate size: " << total_bytes[0] << std::endl;
+    std::cout << "\ttotal deflate size: " << total_bytes[1] << std::endl;
+    std::cout << "\tcompression ratio: " << total_bytes[1] / double(total_bytes[0]) << std::endl;
   }
 
   switch (step) {
@@ -467,9 +464,6 @@ void Density::process(int step) {
 
 /* -------------------------------------------------------------------------- */
 void Density::dump() {
-
-  if (my_rank == 0)
-    std::cout << "Dumping dataset ... " << std::flush;
 
   // step 0: ease memory pressure by releasing unused data
   density_field.clear();
@@ -535,9 +529,6 @@ void Density::dump() {
   }
 
   MPI_Barrier(comm);
-
-  if (my_rank == 0)
-    std::cout << " done." << std::endl;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -545,21 +536,19 @@ void Density::run() {
 
   // step 1: load current rank dataset in memory
   cacheData();
-  MPI_Barrier(comm);
 
   // step 2: compute frequencies and histogram
- // computeFrequencies();
+  computeFrequencies();
 
   // step 3: bucket particles
-  //bucketParticles();
+  bucketParticles();
 
+  // inflate and deflate bucketed data
+  for (int step = 0; step < 6; ++step)
+    process(step);
 
-//  // inflate and deflate bucketed data
-//  for (int step = 0; step < 6; ++step)
-//    process(step);
-//
-//  // dump them
-//  dump();
+  // dump them
+  dump();
 }
 
 /* -------------------------------------------------------------------------- */

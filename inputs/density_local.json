@@ -1,7 +1,7 @@
 {
   "hacc": {
     "input": "/Users/hoby/dev/exasky/helios/tests/data.reduced.mpicosmo",
-    "output": "/Users/hoby/dev/exasky/helios/data"
+    "output": "/Users/hoby/dev/exasky/helios/build/decompressed.gio"
   },
   "density": {
     "inputs": [

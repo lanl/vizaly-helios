@@ -79,8 +79,8 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 
     local_rho_count = 0;
     for (int i = 0; i < offset; ++i) {
-      int index = i + my_rank * offset;
-      auto&& current = json["density"]["inputs"][index];
+      int file_index = i + my_rank * offset;
+      auto&& current = json["density"]["inputs"][file_index];
       inputs.emplace_back(current["data"], current["count"]);
       std::cout << "rank["<< my_rank <<"]: \""<< inputs.back().first << "\""<< std::endl;
       local_rho_count += inputs.back().second;
@@ -114,21 +114,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 }
 
 /* -------------------------------------------------------------------------- */
-Density::~Density() {
-  for (int i = 0; i < dim; ++i) {
-    coords[i].clear();
-    velocs[i].clear();
-    density_field.clear();
-    histogram.clear();
-    buckets.clear();
-    bits.clear();
-    index.clear();
-    decompressed[i].clear();
-    decompressed[i * 2].clear();
-  }
-}
-
-/* -------------------------------------------------------------------------- */
 void Density::cacheData() {
 
   bool const master_rank = (my_rank == 0);
@@ -153,13 +138,12 @@ void Density::cacheData() {
       // retrieve debug infos
       if (master_rank) {
         std::cout << ioMgr->getDataInfo();
-        if (i == 0)
-          std::cout << ioMgr->getLog();
+        std::cout << ioMgr->getLog();
       }
 
       // store actual data
       auto const n = ioMgr->getNumElements();
-      if (columns[i] != "id") {
+      if (i < 6) {
         auto const data = static_cast<float*>(ioMgr->data);
         if (i < 3) {
           coords[i].resize(n);
@@ -190,6 +174,7 @@ void Density::cacheData() {
     coords_max[i] = static_cast<float>(ioMgr->data_extents[i].second);
   }
 
+  MPI_Barrier(comm);
   if (master_rank) {
     std::cout << "done." << std::endl;
     std::cout << "Caching density data ... " << std::flush;
@@ -217,6 +202,7 @@ void Density::cacheData() {
     offset += count;
   }
 
+  MPI_Barrier(comm);
   if (master_rank)
     std::cout << "done." << std::endl;
 

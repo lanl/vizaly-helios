@@ -49,7 +49,7 @@ public:
   Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_comm);
   Density(Density const&) = delete;
   Density(Density&&) noexcept = delete;
-  ~Density();
+  ~Density() = default;
 
   void run();
 

@@ -108,8 +108,12 @@ private:
 
   std::vector<long> histogram;                     // size: nb_bins
   std::vector<std::vector<int>> buckets;           // size: nb_bins
-  std::vector<int> bits;                           // size: nb_bins
   std::vector<float> bin_ranges;                   // size: nb_bins
+
+  // for compression
+  std::vector<int> bits;                           // size: nb_bins
+  int min_bits =  1;
+  int max_bits = 32;
 
   // MPI
   int my_rank  = 0;

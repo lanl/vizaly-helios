@@ -14,8 +14,13 @@
       { "data": "/home/hoby/dev/exasky/hacc/run/density.006.rho.raw", "count": 134217728 },
       { "data": "/home/hoby/dev/exasky/hacc/run/density.007.rho.raw", "count": 134217728 }
     ],
-    "extents": { "min": 0, "max": 511 },
-    "bins": 31225
+    "extents": { "min": 0, "max": 511 }
+  },
+  "bins": {
+    "count": 31225,
+    "adaptive": true,
+    "min_bits": 18,
+    "max_bits": 26
   },
   "plots": {
     "density": "density_distrib",

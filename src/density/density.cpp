@@ -57,7 +57,12 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   assert(json["density"].count("extents"));
   assert(json["density"]["extents"].count("min"));
   assert(json["density"]["extents"].count("max"));
-  assert(json["density"].count("bins"));
+
+  assert(json.count("bins"));
+  assert(json["bins"].count("count"));
+  assert(json["bins"].count("adaptive"));
+  assert(json["bins"].count("min_bits"));
+  assert(json["bins"].count("max_bits"));
 
   assert(json.count("plots"));
   assert(json["plots"].count("density"));
@@ -94,13 +99,17 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
   } else
     throw std::runtime_error("mismatch on number of ranks and data partition");
 
-  nb_bins = json["density"]["bins"];
+  // data binning
+  nb_bins = json["bins"]["count"];
   assert(nb_bins > 0);
-
   histogram.resize(nb_bins);
   buckets.resize(nb_bins);
   bits.resize(nb_bins);
-  setNumberBits();
+
+  use_adaptive_binning = json["bins"]["adaptive"];
+  min_bits = json["bins"]["min_bits"];
+  max_bits = json["bins"]["max_bits"];
+  assert(min_bits > 0 and max_bits > min_bits);
 
   // plots
   output_plot = json["plots"]["density"];
@@ -322,26 +331,29 @@ void Density::dumpHistogram() {
 /* -------------------------------------------------------------------------- */
 void Density::setNumberBits() {
 
-  // temporary
-  /*
-  bits[0] = 20;
-  for (int i =   1; i <    3; ++i) bits[i] = 21;
-  for (int i =   3; i <   10; ++i) bits[i] = 22;
-  for (int i =  10; i <   50; ++i) bits[i] = 23;
-  for (int i =  50; i <  100; ++i) bits[i] = 24;
-  for (int i = 100; i <  200; ++i) bits[i] = 24;
-  for (int i = 200; i <  500; ++i) bits[i] = 25;
-  for (int i = 500; i < 1200; ++i) bits[i] = 25;
-  for (int i = 1200; i < nb_bins; ++i) bits[i] = 26; */
-  bits[0] = 20;
-  for (int i =   1; i <    2; ++i) bits[i] = 21;
-  for (int i =   2; i <    5; ++i) bits[i] = 22;
-  for (int i =   5; i <   50; ++i) bits[i] = 23;
-  for (int i =  50; i <  100; ++i) bits[i] = 24;
-  for (int i = 100; i <  200; ++i) bits[i] = 24;
-  for (int i = 200; i <  500; ++i) bits[i] = 25;
-  for (int i = 500; i < 1200; ++i) bits[i] = 25;
-  for (int i = 1200; i < nb_bins; ++i) bits[i] = 26;
+  if (not use_adaptive_binning) {
+    // just assign bits heuristically for now.
+    bits[0] = min_bits;
+    for (int i =   1; i <    2; ++i) bits[i] = 21;
+    for (int i =   2; i <    5; ++i) bits[i] = 22;
+    for (int i =   5; i <   25; ++i) bits[i] = 23;
+    for (int i =  25; i <  100; ++i) bits[i] = 24;
+    for (int i = 100; i <  200; ++i) bits[i] = 24;
+    for (int i = 200; i <  500; ++i) bits[i] = 25;
+    for (int i = 500; i < 1200; ++i) bits[i] = 25;
+    for (int i = 1200; i < nb_bins; ++i) bits[i] = max_bits;
+  } else {
+    // assign number of bits evenly on bins
+    // use an uniform distribution for now.
+    auto const bits_range = max_bits - min_bits;
+    assert(bits_range);
+    auto const nb_values_per_bit = static_cast<int>(nb_bins / bits_range);
+    for (int i = 0; i < bits_range; ++i) {
+      for (int j = 0; j < nb_values_per_bit; ++j) {
+        bits[i * nb_values_per_bit + j] = i;
+      }
+    }
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -586,6 +598,8 @@ void Density::run() {
 
   // step 1: load current rank dataset in memory
   cacheData();
+
+  setNumberBits();
 
   computeAdaptiveBins();
 

@@ -2,7 +2,7 @@
 
 reset
 set terminal postscript eps enhanced color 14 size 10cm, 9cm
-set output "density.eps"
+set output "density_two.eps"
 
 array colors[7];
 colors[1] = "#FF00FF"
@@ -23,4 +23,4 @@ set format y "10^{%2T}"
 set grid mytics xtics
 set logscale y 10
 
-plot 'density_distrib.dat' using 1:2 notitle lc rgb colors[1] with boxes
+plot 'density_distrib_2.dat' using 1:2 notitle lc rgb colors[1] with boxes

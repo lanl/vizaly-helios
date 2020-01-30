@@ -2,7 +2,7 @@
 
 reset
 set terminal postscript eps enhanced color 14 size 10cm, 9cm
-set output "bucketing.eps"
+set output "bucketing_two.eps"
 
 array colors[7];
 colors[1] = "#FF00FF"
@@ -22,6 +22,7 @@ set format y "10^{%2T}"
 
 set grid mytics xtics
 set logscale y 10
-set logscale x 2
+# set logscale x 2
+set xrange [0:10000]
 
-plot 'bucket_distrib.dat' using 1:2 notitle lc rgb colors[1] with boxes
+plot 'bucket_distrib_2.dat' using 1:2 notitle lc rgb colors[1] with boxes

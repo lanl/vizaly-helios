@@ -1,0 +1,24 @@
+Inflate and deflate data ... done
+	total inflate size: 552220392
+	total deflate size: 4294905436
+	compression ratio: 7.77752
+Inflate and deflate data ... done
+	total inflate size: 582418332
+	total deflate size: 4294905436
+	compression ratio: 7.37426
+Inflate and deflate data ... done
+	total inflate size: 620304095
+	total deflate size: 4294905436
+	compression ratio: 6.92387
+Inflate and deflate data ... done
+	total inflate size: 1588737922
+	total deflate size: 4294905436
+	compression ratio: 2.70334
+Inflate and deflate data ... done
+	total inflate size: 1579291859
+	total deflate size: 4294905436
+	compression ratio: 2.71951
+Inflate and deflate data ... done
+	total inflate size: 1575154633
+	total deflate size: 4294905436
+	compression ratio: 2.72666

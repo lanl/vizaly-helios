@@ -330,6 +330,7 @@ void Density::computeDensityBins() {
 
   // assign number of bits for each bin
   assignBits();
+  MPI_Barrier(comm);
 }
 
 /* -------------------------------------------------------------------------- */

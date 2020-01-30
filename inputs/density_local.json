@@ -15,10 +15,10 @@
       { "data": "/Users/hoby/dev/exasky/helios/inputs/density.007.rho.raw", "count": 134217728 }
     ],
     "extents": { "min": 0, "max": 511 },
-    "bins": 4096
+    "bins": 31225
   },
   "plots": {
     "density": "density_distrib",
-    "buckets": "particles_bucket_distrib"
+    "buckets": "particle_bins"
   }
 }

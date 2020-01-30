@@ -290,6 +290,7 @@ void Density::dumpHistogram() {
 void Density::setNumberBits() {
 
   // temporary
+  /*
   bits[0] = 20;
   for (int i =   1; i <    3; ++i) bits[i] = 21;
   for (int i =   3; i <   10; ++i) bits[i] = 22;

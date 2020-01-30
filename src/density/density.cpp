@@ -349,12 +349,12 @@ void Density::assignBits() {
   } else {
     // assign number of bits evenly on bins
     // use an uniform distribution for now.
-    auto const bits_range = max_bits - min_bits;
-    assert(bits_range);
-    auto const nb_values_per_bit = static_cast<int>(nb_bins / bits_range);
-    for (int i = 0; i < bits_range; ++i) {
+    auto const values_width = 1 + max_bits - min_bits;
+    assert(values_width);
+    auto const nb_values_per_bit = static_cast<int>(nb_bins / values_width);
+    for (int i = 0; i < values_width; ++i) {
       for (int j = 0; j < nb_values_per_bit; ++j) {
-        bits[i * nb_values_per_bit + j] = i;
+        bits[i * nb_values_per_bit + j] = min_bits + i;
       }
     }
   }

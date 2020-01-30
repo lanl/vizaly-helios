@@ -57,7 +57,7 @@ private:
 
   void cacheData();
   void computeFrequencies();
-  void computeParticleBins();
+  void computeDensityBins();
   void dumpHistogram();
   void dumpBucketDistrib();
   void assignBits();

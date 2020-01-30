@@ -295,7 +295,7 @@ void Density::dumpHistogram() {
 }
 
 /* -------------------------------------------------------------------------- */
-void Density::computeParticleBins() {
+void Density::computeDensityBins() {
 
   if (use_adaptive_binning) {
     // adjust number of bins
@@ -604,7 +604,7 @@ void Density::run() {
   cacheData();
 
   // step 2: compute bins and assign bits for each of them
-  computeParticleBins();
+  computeDensityBins();
 
   // step 3: compute frequencies and histogram
   computeFrequencies();

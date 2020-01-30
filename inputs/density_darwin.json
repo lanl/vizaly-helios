@@ -1,7 +1,7 @@
 {
   "hacc": {
     "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
-    "output": "/home/hoby/dev/exasky/data/decompressed_two.gio"
+    "output": "/home/hoby/dev/exasky/data/decompressed.gio"
   },
   "density": {
     "inputs": [

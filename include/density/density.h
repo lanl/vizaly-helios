@@ -57,6 +57,7 @@ private:
 
   void cacheData();
   void computeFrequencies();
+  void computeAdaptiveBins();
   void dumpHistogram();
   void dumpBucketDistrib();
   void setNumberBits();
@@ -86,8 +87,11 @@ private:
   long local_particles = 0;
   long total_particles = 0;
 
+  bool use_adaptive_binning = false;
+
   // histogram
   int nb_bins = 0;
+  long bin_capacity = 0;             // adaptive binning
   long local_rho_count = 0;
   long total_rho_count = 0;
   double local_rho_min = 0.;
@@ -103,8 +107,9 @@ private:
   std::vector<float> density_field;                // size: local_rho_count
 
   std::vector<long> histogram;                     // size: nb_bins
-  std::vector<std::vector<int>> buckets;          // size: nb_bins
+  std::vector<std::vector<int>> buckets;           // size: nb_bins
   std::vector<int> bits;                           // size: nb_bins
+  std::vector<float> bin_ranges;                   // size: nb_bins
 
   // MPI
   int my_rank  = 0;

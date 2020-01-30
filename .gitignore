@@ -4,6 +4,7 @@ travis
 inputs/*.raw
 inputs/*.xml
 *.DS_Store
+scripts/~*
 scripts/*.eps
 scripts/logs
 scripts/slurm-*

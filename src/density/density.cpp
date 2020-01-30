@@ -290,11 +290,15 @@ void Density::dumpHistogram() {
 void Density::setNumberBits() {
 
   // temporary
-  //bits[0] = 22;
-  for (int i =   0; i <  20; ++i) bits[i] = 20;
-  for (int i =  20; i <  50; ++i) bits[i] = 21;
-  for (int i =  50; i < 100; ++i) bits[i] = 22;
-  for (int i = 100; i < nb_bins; ++i) bits[i] = 26;
+  bits[0] = 18;
+  for (int i =   1; i <    3; ++i) bits[i] = 19;
+  for (int i =   3; i <   10; ++i) bits[i] = 20;
+  for (int i =  10; i <   50; ++i) bits[i] = 21;
+  for (int i =  50; i <  100; ++i) bits[i] = 22;
+  for (int i = 100; i <  200; ++i) bits[i] = 23;
+  for (int i = 200; i <  500; ++i) bits[i] = 24;
+  for (int i = 500; i < 1200; ++i) bits[i] = 25;
+  for (int i = 1200; i < nb_bins; ++i) bits[i] = 26;
 }
 
 /* -------------------------------------------------------------------------- */

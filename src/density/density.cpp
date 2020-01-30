@@ -290,14 +290,14 @@ void Density::dumpHistogram() {
 void Density::setNumberBits() {
 
   // temporary
-  bits[0] = 18;
-  for (int i =   1; i <    3; ++i) bits[i] = 19;
-  for (int i =   3; i <   10; ++i) bits[i] = 20;
-  for (int i =  10; i <   50; ++i) bits[i] = 21;
-  for (int i =  50; i <  100; ++i) bits[i] = 22;
-  for (int i = 100; i <  200; ++i) bits[i] = 23;
-  for (int i = 200; i <  500; ++i) bits[i] = 24;
-  for (int i = 500; i < 1200; ++i) bits[i] = 25;
+  bits[0] = 20;
+  for (int i =   1; i <    3; ++i) bits[i] = 20;
+  for (int i =   3; i <   10; ++i) bits[i] = 21;
+  for (int i =  10; i <   50; ++i) bits[i] = 22;
+  for (int i =  50; i <  100; ++i) bits[i] = 23;
+  for (int i = 100; i <  200; ++i) bits[i] = 24;
+  for (int i = 200; i <  500; ++i) bits[i] = 25;
+  for (int i = 500; i < 1200; ++i) bits[i] = 26;
   for (int i = 1200; i < nb_bins; ++i) bits[i] = 26;
 }
 
@@ -389,16 +389,7 @@ void Density::process(int step) {
   assert(step < 6);
   assert(not buckets.empty());
 
-  float* data = nullptr;
-  switch (step) {
-    case 0: data = coords[0].data(); break;
-    case 1: data = coords[1].data(); break;
-    case 2: data = coords[2].data(); break;
-    case 3: data = velocs[0].data(); break;
-    case 4: data = velocs[1].data(); break;
-    case 5: data = velocs[2].data(); break;
-    default: break;
-  }
+  auto data = coords[step].data();
 
   if (my_rank == 0)
     std::cout << "Inflate and deflate data ... " << std::flush;
@@ -429,7 +420,7 @@ void Density::process(int step) {
 
     auto kernel = CompressorFactory::create("fpzip");
     kernel->init();
-    kernel->parameters["bits"] = std::to_string(step < 3 ? bits[j] : bits[j] - 2);
+    kernel->parameters["bits"] = std::to_string(bits[j]);
     kernel->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
     dataset.clear();
 
@@ -453,16 +444,8 @@ void Density::process(int step) {
     std::cout << "\tcompression ratio: " << total_bytes[1] / double(total_bytes[0]) << std::endl;
   }
 
-  switch (step) {
-    case 0: coords[0].clear(); coords[0].shrink_to_fit(); break;
-    case 1: coords[1].clear(); coords[1].shrink_to_fit(); break;
-    case 2: coords[2].clear(); coords[2].shrink_to_fit(); break;
-    case 3: velocs[0].clear(); velocs[0].shrink_to_fit(); break;
-    case 4: velocs[1].clear(); velocs[1].shrink_to_fit(); break;
-    case 5: velocs[2].clear(); velocs[2].shrink_to_fit(); break;
-    default: break;
-  }
-
+  coords[step].clear();
+  coords[step].shrink_to_fit();
   MPI_Barrier(comm);
 }
 
@@ -477,24 +460,35 @@ void Density::dump() {
   bits.clear();
   bits.shrink_to_fit();
 
-  // step 1: sort particles indices
-  std::vector<long> sorted_indices;
-  sorted_indices.reserve(local_particles);
-
+  // step 1: sort all uncompressed data
+  std::vector<long> uid;
+  uid.reserve(local_particles);
   for (auto&& bucket : buckets) {
     for (auto&& i : bucket) {
-      sorted_indices.emplace_back(i);
+      uid.emplace_back(index[i]);
     }
   }
-  // release memory
   index.clear();
   index.shrink_to_fit();
+
+  std::vector<float> v[dim];
+  for (int i = 0; i < dim; ++i) {
+    v[i].reserve(local_particles);
+    for (auto&& bucket : buckets) {
+      for (auto&& k : bucket) {
+        v[i].emplace_back(velocs[i][k]);
+      }
+    }
+    velocs[i].clear();
+    velocs[i].shrink_to_fit();
+  }
+
   buckets.clear();
   buckets.shrink_to_fit();
   MPI_Barrier(comm);
 
   // step 2: prepare dataset partition and header
-  int periods[3] = {0, 0, 0};
+  int periods[dim] = {0, 0, 0};
   auto dim_size = ioMgr->mpi_partition;
   MPI_Cart_create(comm, 3, dim_size, periods, 0, &comm);
 
@@ -503,7 +497,7 @@ void Density::dump() {
   gioWriter.setNumElems(local_particles);
 
   // init physical params
-  for (int d = 0; d < 3; ++d) {
+  for (int d = 0; d < dim; ++d) {
     gioWriter.setPhysOrigin(ioMgr->phys_orig[d], d);
     gioWriter.setPhysScale(ioMgr->phys_scale[d], d);
   }
@@ -520,10 +514,10 @@ void Density::dump() {
   gioWriter.addVariable( "x", decompressed[0].data(), flags[1]);
   gioWriter.addVariable( "y", decompressed[1].data(), flags[2]);
   gioWriter.addVariable( "z", decompressed[2].data(), flags[3]);
-  gioWriter.addVariable("vx", decompressed[3].data(), flags[0]);
-  gioWriter.addVariable("vy", decompressed[4].data(), flags[0]);
-  gioWriter.addVariable("vz", decompressed[5].data(), flags[0]);
-  gioWriter.addVariable("id", sorted_indices.data(), flags[0]);
+  gioWriter.addVariable("vx", v[0].data(), flags[0]);
+  gioWriter.addVariable("vy", v[1].data(), flags[0]);
+  gioWriter.addVariable("vz", v[2].data(), flags[0]);
+  gioWriter.addVariable("id", uid.data(), flags[0]);
   gioWriter.write();
 
   // release memory
@@ -548,7 +542,7 @@ void Density::run() {
   bucketParticles();
 
   // inflate and deflate bucketed data
-  for (int step = 0; step < 6; ++step)
+  for (int step = 0; step < dim; ++step)
     process(step);
 
   // dump them

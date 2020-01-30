@@ -98,12 +98,13 @@ private:
   // actual datasets
   std::vector<float> coords[dim];                  // size: local_particles
   std::vector<float> velocs[dim];                  // size: local_particles
+  std::vector<long> index;                         // size: local_particles
+  std::vector<float> decompressed[dim];            // size: local_particles
   std::vector<float> density_field;                // size: local_rho_count
+
   std::vector<long> histogram;                     // size: nb_bins
   std::vector<std::vector<int>> buckets;          // size: nb_bins
   std::vector<int> bits;                           // size: nb_bins
-  std::vector<long> index;                         // size: local_particles
-  std::vector<float> decompressed[2 * dim];        // size: local_particles
 
   // MPI
   int my_rank  = 0;

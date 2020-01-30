@@ -394,6 +394,7 @@ int Density::deduceBucketIndex(float const& rho) const {
         return i;
       }
     }
+    return nb_bins - 1;
   }
 }
 

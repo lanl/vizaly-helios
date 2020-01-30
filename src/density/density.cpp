@@ -273,39 +273,6 @@ void Density::computeFrequencies() {
 }
 
 /* -------------------------------------------------------------------------- */
-void Density::computeAdaptiveBins() {
-
-  // for equiprobable bins: Prins et al. "Chi-square goodness-of-fit test".
-  constexpr double const exponent = 2.0/5;
-  nb_bins = static_cast<int>(2 * std::pow(local_rho_count, exponent));
-  bin_capacity = static_cast<long>(local_rho_count / double(nb_bins));
-  bin_ranges.resize(nb_bins);
-
-  if (my_rank == 0)
-    std::cout << "nb_bins: " << nb_bins << ", capacity: " << bin_capacity << std::endl;
-
-  // now compute quantiles on 'density_field'
-  if (my_rank == 0)
-    std::cout << "Sorting density field ... " << std::flush;
-
-  std::vector<float> sorted_densities(density_field);
-  std::sort(sorted_densities.begin(), sorted_densities.end());
-
-  if (my_rank == 0)
-    std::cout << "done." << std::endl;
-
-  for (int i = 0; i < nb_bins; ++i) {
-    bin_ranges[i] = sorted_densities[i * bin_capacity];
-    if (my_rank == 0)
-      std::cout << "bin_ranges["<< i <<"] = " << bin_ranges[i] << std::endl;
-  }
-
-  sorted_densities.clear();
-  sorted_densities.shrink_to_fit();
-}
-
-
-/* -------------------------------------------------------------------------- */
 void Density::dumpHistogram() {
 
   double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
@@ -327,9 +294,46 @@ void Density::dumpHistogram() {
   file.close();
 }
 
+/* -------------------------------------------------------------------------- */
+void Density::computeParticleBins() {
+
+  if (use_adaptive_binning) {
+    // adjust number of bins
+    // for equiprobable bins: Prins et al. "Chi-square goodness-of-fit test".
+    constexpr double const exponent = 2.0/5;
+    nb_bins = static_cast<int>(2 * std::pow(local_rho_count, exponent));
+    bin_capacity = static_cast<long>(local_rho_count / double(nb_bins));
+    bin_ranges.resize(nb_bins);
+
+    if (my_rank == 0)
+      std::cout << "nb_bins: " << nb_bins << ", capacity: " << bin_capacity << std::endl;
+
+    // now compute quantiles on 'density_field'
+    if (my_rank == 0)
+      std::cout << "Sorting density field ... " << std::flush;
+
+    std::vector<float> sorted_densities(density_field);
+    std::sort(sorted_densities.begin(), sorted_densities.end());
+
+    if (my_rank == 0)
+      std::cout << "done." << std::endl;
+
+    for (int i = 0; i < nb_bins; ++i) {
+      bin_ranges[i] = sorted_densities[i * bin_capacity];
+      if (my_rank == 0)
+        std::cout << "bin_ranges["<< i <<"] = " << bin_ranges[i] << std::endl;
+    }
+
+    sorted_densities.clear();
+    sorted_densities.shrink_to_fit();
+  }
+
+  // assign number of bits for each bin
+  assignBits();
+}
 
 /* -------------------------------------------------------------------------- */
-void Density::setNumberBits() {
+void Density::assignBits() {
 
   if (not use_adaptive_binning) {
     // just assign bits heuristically for now.
@@ -600,23 +604,21 @@ void Density::run() {
   // step 1: load current rank dataset in memory
   cacheData();
 
-  setNumberBits();
+  // step 2: compute bins and assign bits for each of them
+  computeParticleBins();
 
-  computeAdaptiveBins();
-
-  /*
-  // step 2: compute frequencies and histogram
+  // step 3: compute frequencies and histogram
   computeFrequencies();
 
-  // step 3: bucket particles
+  // step 4: bucket particles
   bucketParticles();
 
-  // inflate and deflate bucketed data
-  for (int step = 0; step < dim; ++step)
-    process(step);
+  // step 5: inflate and deflate bucketed data
+  for (int component = 0; component < dim; ++component)
+    process(component);
 
-  // dump them
-  dump();*/
+  // step 6: dump them
+  dump();
 }
 
 /* -------------------------------------------------------------------------- */

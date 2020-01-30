@@ -57,10 +57,10 @@ private:
 
   void cacheData();
   void computeFrequencies();
-  void computeAdaptiveBins();
+  void computeParticleBins();
   void dumpHistogram();
   void dumpBucketDistrib();
-  void setNumberBits();
+  void assignBits();
 
   // particle to density field mapping methods
   long deduceDensityIndex(const float* particle) const;

@@ -18,7 +18,7 @@
   },
   "bins": {
     "count": 62450,
-    "adaptive": false,
+    "adaptive": true,
     "min_bits": 18,
     "max_bits": 26
   },

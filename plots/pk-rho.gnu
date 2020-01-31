@@ -12,15 +12,16 @@ colors[2] = "#006400"
 colors[3] = "#CB0707"
 colors[4] = "#0000FF"
 colors[5] = "#800080"
-colors[6] = "#FF00FF"
-colors[7] = "#A0522D"
+colors[7] = "#FF00FF"
+colors[6] = "#A0522D"
 
-array titles[5];
+array titles[6];
 titles[1] = "ratio=5.0, k = 4096"
 titles[2] = "ratio=7.5, k = {/Symbol r}_{max} = 31225"
 titles[3] = "ratio=5.8, k = 2n\\^{2/5} = 3565, adaptive"
 titles[4] = "ratio=9.8, k = {/Symbol r}_{max}, b_{min} = 18"
 titles[5] = "ratio=8.3, k = 2{/Symbol r}_{max}"
+titles[6] = "ratio=9.5, k = {/Symbol r}_{max}"
 
 
 # ---------------
@@ -41,7 +42,8 @@ plot 'data/pk-orig.dat' using 1:2:3 title "original" w errorbars lc rgb "#000000
      'data/pk-decomp_6.dat' using 1:2:3 title titles[2] w errorbars lc rgb colors[2],\
      'data/pk-decomp_adap.dat' using 1:2:3 title titles[3] w errorbars lc rgb colors[3],\
      'data/pk-decomp_9.dat' using 1:2:3 title titles[5] w errorbars lc rgb colors[5],\
-     'data/pk-decomp_8.dat' using 1:2:3 title titles[4] w errorbars lc rgb colors[4]
+     'data/pk-decomp_8.dat' using 1:2:3 title titles[4] w errorbars lc rgb colors[4],\
+     'data/pk-decomp_8.dat' using 1:2:3 title titles[6] w errorbars lc rgb colors[6]
 
 
 # ---------------
@@ -67,7 +69,8 @@ plot threshold(x) title "threshold" w lines lc rgb "#000000",\
      'data/ratio.txt' using 1:( $8/$2) title titles[2] w lines lc rgb colors[2],\
      'data/ratio.txt' using 1:( $9/$2) title titles[3] w lines lc rgb colors[3],\
      'data/ratio.txt' using 1:($11/$2) title titles[5] w lines lc rgb colors[5],\
-     'data/ratio.txt' using 1:($10/$2) title titles[4] w lines lc rgb colors[4]
+     'data/ratio.txt' using 1:($10/$2) title titles[4] w lines lc rgb colors[4],\
+     'data/ratio.txt' using 1:($11/$2) title titles[6] w lines lc rgb colors[6]
 
 
 unset multiplot

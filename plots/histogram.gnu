@@ -20,7 +20,7 @@ array titles[5];
 titles[1] = "k = {/Symbol r}_{max} = 31225"
 titles[2] = "k = 20000"
 titles[3] = "k = 4096"
-titles[4] = "k = 3565, adaptive"
+titles[4] = "k = 2n\\^{2/5} = 3565, adaptive"
 titles[5] = "k = 2 {/Symbol r}_{max}"
 
 # ---------------

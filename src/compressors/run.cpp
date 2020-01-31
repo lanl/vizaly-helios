@@ -94,10 +94,8 @@ int main(int argc, char* argv[]) {
 
   if (json["compress"]["output"].count("dump")) {
     dump = true;
-    output_file = tools::extractFileName(input);
-    output_path = json["compress"]["output"]["dump"];
-    if (rank == 0)
-      tools::createFolder(output_path);
+    //output_file = tools::extractFileName(input);
+    output_file = json["compress"]["output"]["dump"];
   }
 
   int const nb_compressors = compressors.size();
@@ -450,14 +448,14 @@ int main(int argc, char* argv[]) {
         }
       }
 
-      auto const& current_compressor = json["compress"]["kernels"][c];
-      temp = current_compressor["prefix"];
-      auto output_decompressed = (output_path != "."
-        ? std::string(output_path + "/" + temp + "__" + output_path)
-        : std::string(temp + "__" + output_path)
-      );
+//      auto const& current_compressor = json["compress"]["kernels"][c];
+//      temp = current_compressor["prefix"];
+//      auto output_decompressed = (output_path != "."
+//        ? std::string(output_path + "/" + temp + "__" + output_path)
+//        : std::string(temp + "__" + output_path)
+//      );
 
-      io_manager->dump(output_decompressed);
+      io_manager->dump(output_file);
       clock_dump.stop();
 
       #if !defined(NDEBUG)

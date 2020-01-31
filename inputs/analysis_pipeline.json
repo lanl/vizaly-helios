@@ -20,14 +20,13 @@
   "compress": {
     "input": "/home/hoby/dev/exasky/data/data-non-halo-raw",
     "output":{
-      "dump": "/home/hoby/dev/exasky/data",
+      "dump": "/home/hoby/dev/exasky/data/data-non-halo-20bits",
       "log": "non-halo",
       "stats": "non-halo_stats"
     },
     "kernels":[
       {
         "name": "fpzip",
-        "prefix": "data-non-halo-fpzip-20bits",
         "bits": 20
       }
     ],

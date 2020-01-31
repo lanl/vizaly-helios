@@ -25,19 +25,19 @@ OUTPUT_DATA="/home/hoby/dev/exasky/data/pk-merged-zip${SUFFIX}.dat"
 # extract non-halos and compute entropy if required
 if ${EXTRACT_NON_HALOS}; then
   source "/home/hoby/.bashrc" && cd ${BUILD} &&
-  mpirun -np ${NRANKS} ./analyzer ${INPUT_JSON} 
+  mpirun -np ${NRANKS} ./analysis ${INPUT_JSON}
 fi
 
 # compress non-halo particles dataset
 if ${COMPRESS_NON_HALOS}; then
   source "/home/hoby/.bashrc" && cd ${BUILD} &&
-  mpirun -np ${NRANKS} ./CBench ${INPUT_JSON} 
+  mpirun -np ${NRANKS} ./compress ${INPUT_JSON}
 fi
 
 # combine it with halo ones
 if ${MERGE_DATASETS}; then
   source "/home/hoby/.bashrc" && cd ${BUILD} &&
-  mpirun -np ${NRANKS} ./merger ${INPUT_JSON}
+  mpirun -np ${NRANKS} ./combine ${INPUT_JSON}
 fi
 
 # compute power spectrum eventually

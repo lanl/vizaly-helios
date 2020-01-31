@@ -17,9 +17,9 @@
     "extents": { "min": 0, "max": 511 }
   },
   "bins": {
-    "count": 62450,
-    "adaptive": true,
-    "min_bits": 18,
+    "count": 31225,
+    "adaptive": false,
+    "min_bits": 19,
     "max_bits": 26
   },
   "plots": {

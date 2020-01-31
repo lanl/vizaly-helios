@@ -349,13 +349,13 @@ void Density::assignBits() {
   if (not use_adaptive_binning) {
     // just assign bits heuristically for now.
     bits[0] = min_bits;
-    for (int i =   1; i <    2; ++i) bits[i] = 21;
-    for (int i =   2; i <    5; ++i) bits[i] = 22;
-    for (int i =   5; i <   25; ++i) bits[i] = 23;
-    for (int i =  25; i <  100; ++i) bits[i] = 24;
+    for (int i =   1; i <    2; ++i) bits[i] = 20;
+    for (int i =   2; i <    5; ++i) bits[i] = 21;
+    for (int i =   5; i <   25; ++i) bits[i] = 22;
+    for (int i =  25; i <  100; ++i) bits[i] = 23;
     for (int i = 100; i <  200; ++i) bits[i] = 24;
     for (int i = 200; i <  500; ++i) bits[i] = 25;
-    for (int i = 500; i < 1200; ++i) bits[i] = 25;
+    for (int i = 500; i < 1200; ++i) bits[i] = 26;
     for (int i = 1200; i < nb_bins; ++i) bits[i] = max_bits;
   } else {
     // assign number of bits evenly on bins

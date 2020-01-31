@@ -40,7 +40,7 @@
   },
   "merge": {
     "halos": "/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-halo-sz",
-    "non-halos":"/home/hoby/dev/exasky/data/data-non-halo-fpzip-20bits__data-non-halo-raw",
+    "non-halos":"/home/hoby/dev/exasky/data/data-non-halo-20bits",
     "output": "/home/hoby/dev/exasky/data/data-merged-zip",
     "logs": "logs/merge"
   }

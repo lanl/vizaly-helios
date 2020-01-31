@@ -245,17 +245,24 @@ void Density::computeFrequencies() {
   std::fill(local_histo, local_histo + nb_bins, 0);
   std::fill(total_histo, total_histo + nb_bins, 0);
 
-  double const range = total_rho_max - total_rho_min;
-  double const capacity = range / nb_bins;
+  if (not use_adaptive_binning) {
+    double const range = total_rho_max - total_rho_min;
+    double const capacity = range / nb_bins;
 
-  for (auto k = 0; k < local_rho_count; ++k) {
-    double relative_value = (density_field[k] - total_rho_min) / range;
-    int bin_index = static_cast<int>((range * relative_value) / capacity);
+    for (auto k = 0; k < local_rho_count; ++k) {
+      double relative_value = (density_field[k] - total_rho_min) / range;
+      int bin_index = static_cast<int>((range * relative_value) / capacity);
 
-    if (bin_index >= nb_bins)
-      bin_index--;
+      if (bin_index >= nb_bins)
+        bin_index--;
 
-    local_histo[bin_index]++;
+      local_histo[bin_index]++;
+    }
+  } else {
+    auto const capacity = static_cast<long>(local_rho_count / double(nb_bins));
+    for (int bin_index = 0; bin_index < nb_bins; ++bin_index) {
+      local_histo[bin_index] = capacity;
+    }
   }
 
   MPI_Allreduce(local_histo, total_histo, nb_bins, MPI_LONG, MPI_SUM, comm);
@@ -275,8 +282,6 @@ void Density::computeFrequencies() {
 /* -------------------------------------------------------------------------- */
 void Density::dumpHistogram() {
 
-  double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
-
   std::ofstream file(output_plot + ".dat", std::ios::trunc);
   assert(file.is_open());
   assert(file.good());
@@ -285,10 +290,15 @@ void Density::dumpHistogram() {
   file << "# col 1: density range" << std::endl;
   file << "# col 2: particle count" << std::endl;
 
-  int k = 1;
-  for (auto&& value : histogram) {
-    file << total_rho_min + (k * width) << "\t" << value << std::endl;
-    k++;
+  if (not use_adaptive_binning) {
+    double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
+    for (int k =0; k < nb_bins; ++k) {
+      file << total_rho_min + (k * width) << "\t" << histogram[k] << std::endl;
+    }
+  } else {
+    for (int k =0; k < nb_bins; ++k) {
+      file << total_rho_min + bin_ranges[k] << "\t" << histogram[k] << std::endl;
+    }
   }
 
   file.close();

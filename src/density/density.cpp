@@ -364,7 +364,10 @@ void Density::assignBits() {
     auto const nb_values_per_bit = static_cast<int>(nb_bins / values_width);
     for (int i = 0; i < values_width; ++i) {
       for (int j = 0; j < nb_values_per_bit; ++j) {
-        bits[i * nb_values_per_bit + j] = min_bits + i;
+        if (i < 2)
+          bits[i * nb_values_per_bit + j] = min_bits + i;
+        else
+          bits[i * nb_values_per_bit + j] = max_bits;
       }
     }
   }

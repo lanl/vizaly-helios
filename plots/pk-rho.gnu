@@ -15,9 +15,10 @@ colors[5] = "#800080"
 colors[6] = "#FF00FF"
 colors[7] = "#A0522D"
 
-array titles[2];
+array titles[3];
 titles[1] = "ratio=5.0"
 titles[2] = "ratio=7.5"
+titles[3] = "ratio=5.8, adaptive"
 
 
 # ---------------
@@ -34,7 +35,8 @@ set format y "10^{%2T}"
 
 plot 'data/pk-orig.dat' using 1:2:3 title "original" w errorbars lc rgb "#000000",\
      'data/pk-decomp_1.dat' using 1:2:3 title titles[1] w errorbars lc rgb colors[1],\
-     'data/pk-decomp_6.dat' using 1:2:3 title titles[2] w errorbars lc rgb colors[2]
+     'data/pk-decomp_6.dat' using 1:2:3 title titles[2] w errorbars lc rgb colors[2],\
+     'data/pk-decomp_adap.dat' using 1:2:3 title titles[3] w errorbars lc rgb colors[3]
 
 # ---------------
 reset
@@ -54,6 +56,7 @@ threshold(x) = 1.01
 
 plot threshold(x) title "threshold" w lines lc rgb "#000000",\
      'data/ratio.txt' using 1:($3/$2) title titles[1] w lines lc rgb colors[1],\
-     'data/ratio.txt' using 1:($8/$2) title titles[2] w lines lc rgb colors[2]
+     'data/ratio.txt' using 1:($8/$2) title titles[2] w lines lc rgb colors[2],\
+     'data/ratio.txt' using 1:($9/$2) title titles[3] w lines lc rgb colors[3]
 
 unset multiplot

@@ -4,7 +4,7 @@
     "full":"/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499",
     "halo":"/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/analysis/Halos/b0168/STEP499/m000-499.haloparticles",
     "filename":"/home/hoby/dev/exasky/data/data-non-halo-raw",
-    "scalars":["x", "y", "z"]
+    "scalars":["x", "y", "z", "vx", "vy", "vz"]
   },
   "analysis":{
     "non-halos":{
@@ -17,22 +17,20 @@
       "plots": "entropy/distrib"
     }
   },
-  "compressors":[
-    {
-      "name": "fpzip",
-      "output-prefix": "data-non-halo-fpzip-20bits",
-      "bits":20
-    }
-  ],
-  "cbench":{
-    "path":"",
+  "compress": {
+    "input": "/home/hoby/dev/exasky/data/data-non-halo-raw",
     "output":{
-      "run-path": "build/",
-      "output-decompressed": true,
-      "output-decompressed-location": "/home/hoby/dev/exasky/data",
-      "log-file": "non-halo",
-      "metrics-file": "non-halo_metrics"
+      "dump": "/home/hoby/dev/exasky/data",
+      "log": "non-halo",
+      "stats": "non-halo_stats"
     },
+    "kernels":[
+      {
+        "name": "fpzip",
+        "prefix": "data-non-halo-fpzip-20bits",
+        "bits": 20
+      }
+    ],
     "metrics":[
       { "name":"absolute_error" },
       { "name":"relative_error" },

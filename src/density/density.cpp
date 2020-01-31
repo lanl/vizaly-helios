@@ -403,6 +403,9 @@ int Density::deduceBucketIndex(float const& rho) const {
     assert(bucket_index < nb_bins);
     return bucket_index;
   } else {
+    if (rho < bin_ranges[0])
+      return 0;
+
     for (int i = 1; i < nb_bins; ++i) {
       if (bin_ranges[i - 1] <= rho and rho <= bin_ranges[i]) {
         return i;

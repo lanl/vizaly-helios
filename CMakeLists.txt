@@ -153,7 +153,7 @@ if (FFTW_FOUND)
 endif()
 
 # enable/disable compressors
-option(ENABLE_BLOSC   "Enable BLOSC"   OFF)
+option(ENABLE_BLOSC   "Enable BLOSC"   ON)
 option(ENABLE_FPZIP   "Enable FPZIP"   ON)
 option(ENABLE_ISABELA "Enable ISABELA" OFF)
 option(ENABLE_SZ      "Enable SZ"      ON)

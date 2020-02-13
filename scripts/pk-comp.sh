@@ -5,12 +5,12 @@
 #SBATCH --partition scaling
 #SBATCH --job-name spectrum
 
-HACC="/projects/exasky/HACC"
-POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
-PARTICLES_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-full-noised"
-OUTPUT_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-noised.dat"
-TIMESTEP=499
+timestep=499
+hacc="/projects/exasky/hacc"
+power_spectrum="${hacc}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
+particles="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/data-full-noised-${timestep}"
+output="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-noised-${timestep}.dat"
 
 # shellcheck disable=SC1090
-source "${HACC}.darwin_setup" && cd "${HACC}/run" &&
-mpirun ${POWER_SPECTRUM} inputs/indat.params -n ${PARTICLES_DATA} ${OUTPUT_DATA} ${TIMESTEP}
+source "${hacc}.darwin_setup" && cd "${hacc}/run" &&
+mpirun ${power_spectrum} inputs/indat.params -n ${particles} ${output} ${timestep}

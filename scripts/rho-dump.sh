@@ -1,16 +1,16 @@
 #!/bin/bash
 
-#SBATCH --nodes 8
+#SBATCH --nodes 16
 #SBATCH --ntasks-per-node 1
 #SBATCH --partition scaling
 #SBATCH --job-name density
 
-HACC="/home/hoby/dev/exasky/hacc"
-POWER_SPECTRUM="${HACC}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
-PARTICLES_DATA="/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP499/m000.full.mpicosmo.499"
-OUTPUT_DATA="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-full.dat"
-TIMESTEP=499
+timestep=272
+hacc="/home/hoby/dev/exasky/hacc"
+power_spectrum="${hacc}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
+particles="/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_hacc001/STEP${timestep}/m000.full.mpicosmo.${timestep}"
+output="/projects/groups/vizproject/dssdata/Exasky/helios/analysis/pk-full_${timestep}.dat"
 
 # shellcheck disable=SC1090
-source "${HACC}/HACC.darwin_setup" && cd "${HACC}/run" &&
-mpirun ${POWER_SPECTRUM} inputs/indat.params -n ${PARTICLES_DATA} ${OUTPUT_DATA} ${TIMESTEP}
+source "${hacc}/HACC.darwin_setup" && cd "${hacc}/run" &&
+mpirun ${power_spectrum} inputs/indat.params -n ${particles} ${output} ${timestep}

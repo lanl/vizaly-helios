@@ -112,6 +112,11 @@ target_sources(density PRIVATE
 		src/compressors/kernels/fpzip.cpp
 		src/io/data.cpp
 		src/io/hacc.cpp
+		src/compressors/kernels/blosc.cpp
+		src/compressors/kernels/fpzip.cpp
+		src/compressors/kernels/isabela.cpp
+		src/compressors/kernels/sz.cpp
+		src/compressors/kernels/zfp.cpp
 		src/density/density.cpp
 		src/density/run.cpp)
 
@@ -160,44 +165,42 @@ option(ENABLE_SZ      "Enable SZ"      ON)
 option(ENABLE_ZFP     "Enable ZFP"     OFF)
 
 # link to external compressors
-if (ENABLE_BLOSC)
-	find_package(BLOSC REQUIRED)
-	target_compile_definitions(compress PRIVATE -DENABLE_BLOSC=1)
-	target_include_directories(compress PRIVATE ${BLOSC_INCLUDE_DIRS})
-	target_link_libraries(compress PRIVATE ${BLOSC_LIBRARIES})
-endif()
+foreach(binary compress density)
+	if (ENABLE_BLOSC)
+		find_package(BLOSC REQUIRED)
+		target_compile_definitions(${binary} PRIVATE -DENABLE_BLOSC=1)
+		target_include_directories(${binary} PRIVATE ${BLOSC_INCLUDE_DIRS})
+		target_link_libraries(${binary} PRIVATE ${BLOSC_LIBRARIES})
+	endif()
 
-if (ENABLE_FPZIP)
-	find_package(FPZIP REQUIRED)
-	target_compile_definitions(compress PRIVATE -DENABLE_FPZIP=1)
-	target_include_directories(compress PRIVATE ${FPZIP_INCLUDE_DIRS})
-	target_link_libraries(compress PRIVATE ${FPZIP_LIBRARIES})
+	if (ENABLE_FPZIP)
+		find_package(FPZIP REQUIRED)
+		target_compile_definitions(${binary} PRIVATE -DENABLE_FPZIP=1)
+		target_include_directories(${binary} PRIVATE ${FPZIP_INCLUDE_DIRS})
+		target_link_libraries(${binary} PRIVATE ${FPZIP_LIBRARIES})
+	endif()
 
-	target_compile_definitions(density PRIVATE -DENABLE_FPZIP=1)
-	target_include_directories(density PRIVATE ${FPZIP_INCLUDE_DIRS})
-	target_link_libraries(density PRIVATE ${FPZIP_LIBRARIES})
-endif()
+	if (ENABLE_ISABELA)
+		find_package(Isabela REQUIRED)
+		target_compile_definitions(${binary} PRIVATE -DENABLE_ISABELA=1)
+		target_include_directories(${binary} PRIVATE ${ISABELA_INCLUDE_DIRS})
+		target_link_libraries(${binary} PRIVATE ${ISABELA_LIBRARIES})
+	endif()
 
-if (ENABLE_ISABELA)
-	find_package(Isabela REQUIRED)
-	target_compile_definitions(compress PRIVATE -DENABLE_ISABELA=1)
-	target_include_directories(compress PRIVATE ${ISABELA_INCLUDE_DIRS})
-	target_link_libraries(compress PRIVATE ${ISABELA_LIBRARIES})
-endif()
+	if (ENABLE_SZ)
+		find_package(SZ REQUIRED)
+		target_compile_definitions(${binary} PRIVATE -DENABLE_SZ=1)
+		target_include_directories(${binary} PRIVATE ${SZ_INCLUDE_DIRS})
+		target_link_libraries(${binary} PRIVATE ${SZ_LIBRARIES})
+	endif()
 
-if (ENABLE_SZ)
-	find_package(SZ REQUIRED)
-	target_compile_definitions(compress PRIVATE -DENABLE_SZ=1)
-	target_include_directories(compress PRIVATE ${SZ_INCLUDE_DIRS})
-	target_link_libraries(compress PRIVATE ${SZ_LIBRARIES})
-endif()
-
-if (ENABLE_ZFP)
-	find_package(ZFP REQUIRED)
-	target_compile_definitions(compress PRIVATE -DENABLE_ZFP=1)
-	target_include_directories(compress PRIVATE ${ZFP_INCLUDE_DIRS})
-	target_link_libraries(compress PRIVATE ${ZFP_LIBRARIES})
-endif()
+	if (ENABLE_ZFP)
+		find_package(ZFP REQUIRED)
+		target_compile_definitions(${binary} PRIVATE -DENABLE_ZFP=1)
+		target_include_directories(${binary} PRIVATE ${ZFP_INCLUDE_DIRS})
+		target_link_libraries(${binary} PRIVATE ${ZFP_LIBRARIES})
+	endif()
+endforeach()
 
 # install instructions
 install(TARGETS analysis compress combine density gio DESTINATION .)

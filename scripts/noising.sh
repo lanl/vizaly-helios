@@ -5,11 +5,10 @@
 #SBATCH --partition scaling
 #SBATCH --job-name noising
 
-NRANKS=8
+ranks=8
+build="/projects/exasky/hoby-projects/helios/build"
+input_json="../inputs/noising.json"
 
-BUILD="/projects/exasky/hoby-projects/helios/build"
-INPUT_JSON="../inputs/noising.json"
-
-source "/home/hoby/.bashrc" && cd ${BUILD} &&
-mpirun -np ${NRANKS} ./noising ${INPUT_JSON}
+source "/home/hoby/.bashrc" && cd ${build} &&
+mpirun -np ${ranks} ./noising ${input_json}
 

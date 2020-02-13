@@ -5,9 +5,9 @@
 #SBATCH --partition scaling
 #SBATCH --job-name density
 
-RANKS=8
-BUILD="/projects/exasky/hoby-projects/helios/build"
-INPUT_JSON="../inputs/density_darwin.json"
+ranks=8
+build="/projects/exasky/hoby-projects/helios/build"
+input_json="../inputs/density_darwin.json"
 
-source "/home/hoby/.bashrc" && cd ${BUILD} &&
-mpirun -np ${RANKS} ./density ${INPUT_JSON}
+source "/home/hoby/.bashrc" && cd ${build} &&
+mpirun -np ${ranks} ./density ${input_json}

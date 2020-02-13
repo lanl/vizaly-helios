@@ -5,14 +5,22 @@
   },
   "density": {
     "inputs": [
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.000.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.001.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.002.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.003.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.004.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.005.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.006.rho.raw", "count": 134217728 },
-      { "data": "/home/hoby/dev/exasky/data/STEP499/density.007.rho.raw", "count": 134217728 }
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.000.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.001.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.002.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.003.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.004.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.005.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.006.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.007.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.008.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.009.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.010.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.011.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.012.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.013.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.014.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP499/density.015.rho.raw", "count": 67108864 }
     ],
     "extents": { "min": 0, "max": 511 }
   },

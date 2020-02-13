@@ -510,7 +510,10 @@ void Density::process(int step) {
     kernel_fpzip->init();
     kernel_fpzip->parameters["bits"] = std::to_string(bits[j]);
     kernel_fpzip->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
+
+    raw_data = nullptr;
     dataset.clear();
+    dataset.shrink_to_fit();
 
     auto kernel_blosc = CompressorFactory::create("blosc");
     kernel_blosc->init();

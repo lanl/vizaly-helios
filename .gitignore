@@ -7,5 +7,6 @@ inputs/*.xml
 *~*
 scripts/~*
 scripts/*.eps
+scripts/data
 scripts/logs
 scripts/slurm-*

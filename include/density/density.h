@@ -42,9 +42,6 @@
 #include "io/hacc.h"
 #include <compressors/kernels/factory.h>
 /* -------------------------------------------------------------------------- */
-#define DEBUG_DENSITY 1
-#define ENABLE_LOSSLESS_STEP 0
-/* -------------------------------------------------------------------------- */
 class Density {
 
 public:

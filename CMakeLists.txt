@@ -157,12 +157,14 @@ if (FFTW_FOUND)
 	target_compile_definitions(noising PRIVATE -DHAVE_FFTW=1)
 endif()
 
-# enable/disable compressors
-option(ENABLE_BLOSC   "Enable BLOSC"   ON)
-option(ENABLE_FPZIP   "Enable FPZIP"   ON)
-option(ENABLE_ISABELA "Enable ISABELA" OFF)
-option(ENABLE_SZ      "Enable SZ"      ON)
-option(ENABLE_ZFP     "Enable ZFP"     OFF)
+# enable/disable compressors and debug options
+option(ENABLE_BLOSC    "Enable BLOSC"   ON)
+option(ENABLE_FPZIP    "Enable FPZIP"   ON)
+option(ENABLE_ISABELA  "Enable ISABELA" OFF)
+option(ENABLE_SZ       "Enable SZ"      ON)
+option(ENABLE_ZFP      "Enable ZFP"     OFF)
+option(DEBUG_DENSITY   "Debug density"  OFF)
+option(ENABLE_LOSSLESS "Use lossy+lossless" OFF)
 
 # link to external compressors
 foreach(binary compress density)
@@ -201,6 +203,14 @@ foreach(binary compress density)
 		target_link_libraries(${binary} PRIVATE ${ZFP_LIBRARIES})
 	endif()
 endforeach()
+
+# define macros if necessary
+if (DEBUG_DENSITY)
+	target_compile_definitions(density PRIVATE -DDEBUG_DENSITY=1)
+endif()
+if (ENABLE_LOSSLESS)
+	target_compile_definitions(density PRIVATE -DENABLE_LOSSLESS=1)
+endif()
 
 # install instructions
 install(TARGETS analysis compress combine density gio DESTINATION .)

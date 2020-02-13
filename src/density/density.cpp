@@ -223,7 +223,7 @@ void Density::cacheData() {
 
 /* -------------------------------------------------------------------------- */
 void Density::computeFrequencies() {
-
+#if !DEBUG_DENSITY
   if (my_rank == 0)
     std::cout << "Computing frequencies ... " << std::flush;
 
@@ -277,6 +277,7 @@ void Density::computeFrequencies() {
   }
 
   MPI_Barrier(comm);
+#endif
 }
 
 /* -------------------------------------------------------------------------- */
@@ -306,7 +307,7 @@ void Density::dumpHistogram() {
 
 /* -------------------------------------------------------------------------- */
 void Density::computeDensityBins() {
-
+#if !DEBUG_DENSITY
   if (use_adaptive_binning) {
     // adjust number of bins
     // for equiprobable bins: Prins et al. "Chi-square goodness-of-fit test".
@@ -341,6 +342,7 @@ void Density::computeDensityBins() {
   // assign number of bits for each bin
   assignBits();
   MPI_Barrier(comm);
+#endif
 }
 
 /* -------------------------------------------------------------------------- */
@@ -424,6 +426,7 @@ void Density::bucketParticles() {
   if (my_rank == 0)
     std::cout << "Bucketing particles ... " << std::flush;
 
+#if !DEBUG_DENSITY
   for (int i = 0; i < local_particles; ++i) {
     float particle[] = { coords[0][i], coords[1][i], coords[2][i] };
     auto const density_index = deduceDensityIndex(particle);
@@ -435,8 +438,16 @@ void Density::bucketParticles() {
   }
 
   MPI_Barrier(comm);
-
   dumpBucketDistrib();
+#else
+  nb_bins = 1;
+  bits[0] = min_bits;
+  buckets.resize(1);
+  for (int i = 0; i < local_particles; ++i)
+    buckets[0].emplace_back(i);
+
+  MPI_Barrier(comm);
+#endif
 
   if (my_rank == 0)
     std::cout << "done" << std::endl;
@@ -479,10 +490,85 @@ void Density::process(int step) {
   if (my_rank == 0)
     std::cout << "Inflate and deflate data ... " << std::flush;
 
+#if ENABLE_LOSSLESS
   size_t local_bytes_fpzip[] = {0, 0};
   size_t local_bytes_blosc[] = {0, 0};
-  size_t total_bytes_fpzip[] = {0, 0};
-  size_t total_bytes_blosc[] = {0, 0};
+  size_t total_bytes_fpzip[] = {0, total_particles * sizeof(float)};
+  size_t total_bytes_blosc[] = {0, total_particles * sizeof(float)};
+  size_t nb_elems[] = {0, 0, 0, 0, 0};
+
+  std::vector<float> dataset;
+  decompressed[step].reserve(local_particles);
+
+  for (int j = 0; j < nb_bins; ++j) {
+
+    if (buckets[j].empty())
+      continue;
+
+    // retrieve number of particles for this bucket
+    nb_elems[0] = buckets[j].size();
+
+    // step 1: create dataset according to computed bin.
+    dataset.reserve(nb_elems[0]);
+    for (auto&& particle_index : buckets[j])
+      dataset.emplace_back(data[particle_index]);
+
+    // step 2: inflate agregated dataset and release memory
+    void* raw_data = static_cast<void*>(dataset.data());
+    void* raw_inflate = nullptr;
+    void* raw_deflate = nullptr;
+    void* raw_inflate_blosc = nullptr;
+    void* raw_deflate_blosc = nullptr;
+
+    auto kernel_fpzip = CompressorFactory::create("fpzip");
+    kernel_fpzip->init();
+    kernel_fpzip->parameters["bits"] = std::to_string(bits[j]);
+    kernel_fpzip->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
+
+    // early memory release
+    raw_data = nullptr;
+    dataset.clear();
+    dataset.shrink_to_fit();
+
+    auto kernel_blosc = CompressorFactory::create("blosc");
+    kernel_blosc->init();
+
+    auto type_size = kernel_fpzip->getBytes() / nb_elems[0];
+    std::cout << "chunk_size: " << kernel_fpzip->getBytes() << ", type_size: " << type_size << std::endl;
+    kernel_blosc->compress(raw_inflate, raw_inflate_blosc, "float", type_size, nb_elems);
+
+    // update compression metrics
+    local_bytes_fpzip[0] += kernel_fpzip->getBytes();
+    local_bytes_blosc[0] += kernel_blosc->getBytes();
+    kernel_blosc->close();
+
+    // step 3: deflate data and store it
+    kernel_fpzip->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
+    for (int k = 0; k < nb_elems[0]; ++k)
+      decompressed[step].emplace_back(static_cast<float*>(raw_deflate)[k]);
+  }
+
+  MPI_Barrier(comm);
+  MPI_Reduce(local_bytes_fpzip, total_bytes_fpzip, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
+  MPI_Reduce(local_bytes_blosc, total_bytes_blosc, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
+
+  if (my_rank == 0) {
+    std::cout << "done" << std::endl;
+
+    // print stats
+    auto const& bytes_lossy = total_bytes_fpzip;
+    auto const& bytes_final = total_bytes_blosc;
+    double const ratios[] = { bytes_lossy[1] / double(bytes_lossy[0]),
+                              bytes_final[1] / double(bytes_final[0]) };
+
+    std::printf("\tdeflate size: [lossy: %lu, final: %lu]\n", bytes_lossy[0], bytes_final[0]);
+    std::printf("\tinflate size: [lossy: %lu, final: %lu]\n", bytes_lossy[1], bytes_final[1]);
+    std::printf("\tcompression : [lossy: %.3f, final: %.3f]\n", ratios[0], ratios[1]);
+    std::fflush(stdout);
+  }
+#else
+  size_t local_bytes[] = {0, 0};
+  size_t total_bytes[] = {0, total_particles * sizeof(float)};
   size_t nb_elems[] = {0, 0, 0, 0, 0};
 
   std::vector<float> dataset;
@@ -504,26 +590,15 @@ void Density::process(int step) {
     void* raw_data = static_cast<void*>(dataset.data());
     void* raw_inflate = nullptr;
     void* raw_deflate = nullptr;
-    void* raw_lossless = nullptr;
 
     auto kernel_fpzip = CompressorFactory::create("fpzip");
     kernel_fpzip->init();
     kernel_fpzip->parameters["bits"] = std::to_string(bits[j]);
     kernel_fpzip->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
-
-    raw_data = nullptr;
     dataset.clear();
-    dataset.shrink_to_fit();
-
-    auto kernel_blosc = CompressorFactory::create("blosc");
-    kernel_blosc->init();
-    kernel_blosc->compress(raw_inflate, raw_lossless, "float", bits[j], nb_elems);
 
     // update compression metrics
-    local_bytes_fpzip[0] += kernel_fpzip->getBytes();
-    local_bytes_blosc[0] += kernel_blosc->getBytes();
-    local_bytes_fpzip[1] += nb_elems[0] * sizeof(float);
-    local_bytes_blosc[1] += nb_elems[0] * bits[j];
+    local_bytes[0] += kernel_fpzip->getBytes();
 
     // step 3: deflate data and store it
     kernel_fpzip->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
@@ -532,24 +607,17 @@ void Density::process(int step) {
   }
 
   MPI_Barrier(comm);
-  for (int i = 0; i < 2; ++i) {
-    MPI_Reduce(local_bytes_fpzip+i, total_bytes_fpzip+i, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
-    MPI_Reduce(local_bytes_blosc+i, total_bytes_blosc+i, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
-  }
+  MPI_Reduce(local_bytes, total_bytes, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
     // print stats
-    auto const& bytes_lossy = total_bytes_fpzip;
-    auto const& bytes_final = total_bytes_blosc;
-    double const ratios[] = { bytes_lossy[1] / double(bytes_lossy[0]),
-                              bytes_final[1] / double(bytes_final[0]) };
-
-    std::printf("\tdeflate size: [lossy: %lu, final: %lu]\n", bytes_lossy[0], bytes_final[0]);
-    std::printf("\tinflate size: [lossy: %lu, final: %lu]\n", bytes_lossy[1], bytes_final[1]);
-    std::printf("\tcompression : [lossy: %.3f, final: %.3f]\n", ratios[0], ratios[1]);
+    std::printf("\tdeflate size: %lu\n", total_bytes[0]);
+    std::printf("\tinflate size: %lu\n", total_bytes[1]);
+    std::printf("\tratio : %.3f\n", total_bytes[1] / double(total_bytes[0]));
     std::fflush(stdout);
   }
+#endif
 
   coords[step].clear();
   coords[step].shrink_to_fit();

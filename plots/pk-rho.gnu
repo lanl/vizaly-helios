@@ -38,13 +38,13 @@ set xrange [0.01:10]
 set yrange [1:100000]
 #set format y "10^{%2T}"
 
-plot 'data/pk-orig.dat' using 1:2:3 title "original" w errorbars lc rgb "#000000",\
-     'data/pk-decomp_1.dat' using 1:2:3 title titles[1] w errorbars lc rgb colors[1],\
-     'data/pk-decomp_6.dat' using 1:2:3 title titles[2] w errorbars lc rgb colors[2],\
-     'data/pk-decomp_adap.dat' using 1:2:3 title titles[3] w errorbars lc rgb colors[3],\
-     'data/pk-decomp_9.dat' using 1:2:3 title titles[5] w errorbars lc rgb colors[5],\
-     'data/pk-decomp_10.dat' using 1:2:3 title titles[6] w errorbars lc rgb colors[6],\
-     'data/pk-merged-zip.dat' using 1:2:3 title titles[7] w errorbars lc rgb colors[7]
+plot 'data/STEP499/pk-orig.dat' using 1:2:3 title "original" w errorbars lc rgb "#000000",\
+     'data/STEP499/pk-decomp_1.dat' using 1:2:3 title titles[1] w errorbars lc rgb colors[1],\
+     'data/STEP499/pk-decomp_6.dat' using 1:2:3 title titles[2] w errorbars lc rgb colors[2],\
+     'data/STEP499/pk-decomp_adap.dat' using 1:2:3 title titles[3] w errorbars lc rgb colors[3],\
+     'data/STEP499/pk-decomp_9.dat' using 1:2:3 title titles[5] w errorbars lc rgb colors[5],\
+     'data/STEP499/pk-decomp_10.dat' using 1:2:3 title titles[6] w errorbars lc rgb colors[6],\
+     'data/STEP499/pk-merged-zip.dat' using 1:2:3 title titles[7] w errorbars lc rgb colors[7]
 
 #      'data/pk-decomp_8.dat' using 1:2:3 title titles[4] w errorbars lc rgb colors[4],\
 # ---------------
@@ -66,12 +66,12 @@ set format y "%.2f"
 threshold(x) = 1.01
 
 plot threshold(x) title "threshold" w lines lc rgb "#000000",\
-     'data/ratio.txt' using 1:( $3/$2) title titles[1] w lines lc rgb colors[1],\
-     'data/ratio.txt' using 1:( $8/$2) title titles[2] w lines lc rgb colors[2],\
-     'data/ratio.txt' using 1:( $9/$2) title titles[3] w lines lc rgb colors[3],\
-     'data/ratio.txt' using 1:($11/$2) title titles[5] w lines lc rgb colors[5],\
-     'data/ratio.txt' using 1:($11/$2) title titles[6] w lines lc rgb colors[6],\
-     'data/ratio.txt' using 1:($12/$2) title titles[7] w lines lc rgb colors[7]
+     'data/STEP499/ratio.txt' using 1:( $3/$2) title titles[1] w lines lc rgb colors[1],\
+     'data/STEP499/ratio.txt' using 1:( $8/$2) title titles[2] w lines lc rgb colors[2],\
+     'data/STEP499/ratio.txt' using 1:( $9/$2) title titles[3] w lines lc rgb colors[3],\
+     'data/STEP499/ratio.txt' using 1:($11/$2) title titles[5] w lines lc rgb colors[5],\
+     'data/STEP499/ratio.txt' using 1:($11/$2) title titles[6] w lines lc rgb colors[6],\
+     'data/STEP499/ratio.txt' using 1:($12/$2) title titles[7] w lines lc rgb colors[7]
 #      'data/ratio.txt' using 1:($10/$2) title titles[4] w lines lc rgb colors[4],\
 
 unset multiplot

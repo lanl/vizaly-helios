@@ -35,11 +35,11 @@ set grid mytics xtics
 set logscale y 10
 
 
-plot 'data/density_distrib_1.dat' using 1:2 title titles[3] lc rgb colors[3] with boxes,\
-     'data/density_distrib_2.dat' using 1:2 title titles[2] lc rgb colors[2] with boxes,\
-     'data/density_distrib_7.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
-     'data/density_distrib_9.dat' using 1:2 title titles[5] lc rgb colors[5] with boxes,\
-     'data/density_distrib_adapt.dat' using 1:2 title titles[4] lc rgb colors[4] with boxes
+plot 'data/STEP499/density_distrib_1.dat' using 1:2 title titles[3] lc rgb colors[3] with boxes,\
+     'data/STEP499/density_distrib_2.dat' using 1:2 title titles[2] lc rgb colors[2] with boxes,\
+     'data/STEP499/density_distrib_7.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
+     'data/STEP499/density_distrib_9.dat' using 1:2 title titles[5] lc rgb colors[5] with boxes,\
+     'data/STEP499/density_distrib_adapt.dat' using 1:2 title titles[4] lc rgb colors[4] with boxes
 
 
 # ---------------
@@ -54,11 +54,11 @@ set key Left reverse below maxcols 1
 set grid mytics xtics
 set logscale y 10
 
-plot 'data/particle_distrib_1.dat' using 1:2 title titles[3] lc rgb colors[3] with boxes,\
-     'data/particle_distrib_2.dat' using 1:2 title titles[2] lc rgb colors[2] with boxes,\
-     'data/particle_distrib_7.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
-     'data/particle_distrib_9.dat' using 1:2 title titles[5] lc rgb colors[5] with boxes,\
-     'data/particle_distrib_adapt.dat' using 1:2 title titles[4] lc rgb colors[4] with boxes
+plot 'data/STEP499/particle_distrib_1.dat' using 1:2 title titles[3] lc rgb colors[3] with boxes,\
+     'data/STEP499/particle_distrib_2.dat' using 1:2 title titles[2] lc rgb colors[2] with boxes,\
+     'data/STEP499/particle_distrib_7.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
+     'data/STEP499/particle_distrib_9.dat' using 1:2 title titles[5] lc rgb colors[5] with boxes,\
+     'data/STEP499/particle_distrib_adapt.dat' using 1:2 title titles[4] lc rgb colors[4] with boxes
 
 # ---------------
 unset multiplot

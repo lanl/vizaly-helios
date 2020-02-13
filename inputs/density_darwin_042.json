@@ -32,6 +32,6 @@
   },
   "plots": {
     "density": "density_distrib-042",
-    "buckets": "particle_bins-042"
+    "buckets": "particle_distrib-042"
   }
 }

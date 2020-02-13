@@ -479,8 +479,10 @@ void Density::process(int step) {
   if (my_rank == 0)
     std::cout << "Inflate and deflate data ... " << std::flush;
 
-  size_t local_bytes[] = {0, 0};
-  size_t total_bytes[] = {0, 0};
+  size_t local_bytes_fpzip[] = {0, 0};
+  size_t local_bytes_blosc[] = {0, 0};
+  size_t total_bytes_fpzip[] = {0, 0};
+  size_t total_bytes_blosc[] = {0, 0};
   size_t nb_elems[] = {0, 0, 0, 0, 0};
 
   std::vector<float> dataset;
@@ -502,31 +504,48 @@ void Density::process(int step) {
     void* raw_data = static_cast<void*>(dataset.data());
     void* raw_inflate = nullptr;
     void* raw_deflate = nullptr;
+    void* raw_lossless = nullptr;
 
-    auto kernel = CompressorFactory::create("fpzip");
-    kernel->init();
-    kernel->parameters["bits"] = std::to_string(bits[j]);
-    kernel->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
+    auto kernel_fpzip = CompressorFactory::create("fpzip");
+    kernel_fpzip->init();
+    kernel_fpzip->parameters["bits"] = std::to_string(bits[j]);
+    kernel_fpzip->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
     dataset.clear();
 
+    auto kernel_blosc = CompressorFactory::create("blosc");
+    kernel_blosc->init();
+    kernel_blosc->compress(raw_inflate, raw_lossless, "float", bits[j], nb_elems);
+
     // update compression metrics
-    local_bytes[0] += kernel->getBytes();
+    local_bytes_fpzip[0] += kernel_fpzip->getBytes();
+    local_bytes_blosc[0] += kernel_blosc->getBytes();
+    local_bytes_fpzip[1] += nb_elems[0] * sizeof(float);
+    local_bytes_blosc[1] += nb_elems[0] * bits[j];
 
     // step 3: deflate data and store it
-    kernel->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
+    kernel_fpzip->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
     for (int k = 0; k < nb_elems[0]; ++k)
       decompressed[step].emplace_back(static_cast<float*>(raw_deflate)[k]);
   }
 
   MPI_Barrier(comm);
-  MPI_Reduce(local_bytes, total_bytes, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
+  for (int i = 0; i < 2; ++i) {
+    MPI_Reduce(local_bytes_fpzip+i, total_bytes_fpzip+i, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
+    MPI_Reduce(local_bytes_blosc+i, total_bytes_blosc+i, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, comm);
+  }
 
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
-    total_bytes[1] = total_particles * sizeof(float);
-    std::cout << "\ttotal inflate size: " << total_bytes[0] << std::endl;
-    std::cout << "\ttotal deflate size: " << total_bytes[1] << std::endl;
-    std::cout << "\tcompression ratio: " << total_bytes[1] / double(total_bytes[0]) << std::endl;
+    // print stats
+    auto const& bytes_lossy = total_bytes_fpzip;
+    auto const& bytes_final = total_bytes_blosc;
+    double const ratios[] = { bytes_lossy[1] / double(bytes_lossy[0]),
+                              bytes_final[1] / double(bytes_final[0]) };
+
+    std::printf("\tdeflate size: [lossy: %lu, final: %lu]\n", bytes_lossy[0], bytes_final[0]);
+    std::printf("\tinflate size: [lossy: %lu, final: %lu]\n", bytes_lossy[1], bytes_final[1]);
+    std::printf("\tcompression : [lossy: %.3f, final: %.3f]\n", ratios[0], ratios[1]);
+    std::fflush(stdout);
   }
 
   coords[step].clear();

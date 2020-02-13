@@ -720,12 +720,11 @@ void Density::run() {
   bucketParticles();
 
   // step 5: inflate and deflate bucketed data
-  /*
   for (int component = 0; component < dim; ++component)
     process(component);
 
   // step 6: dump them
-  dump();*/
+  dump();
 }
 
 /* -------------------------------------------------------------------------- */

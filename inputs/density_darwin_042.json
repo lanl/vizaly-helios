@@ -1,0 +1,37 @@
+{
+  "hacc": {
+    "input": "/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_HACC001/STEP42/m000.full.mpicosmo.42",
+    "output": "/home/hoby/dev/exasky/data/decompressed-042.gio"
+  },
+  "density": {
+    "inputs": [
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.000.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.001.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.002.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.003.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.004.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.005.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.006.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.007.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.008.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.009.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.010.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.011.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.012.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.013.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.014.rho.raw", "count": 67108864 },
+      { "data": "/home/hoby/dev/exasky/data/STEP042/density.015.rho.raw", "count": 67108864 }
+    ],
+    "extents": { "min": 0, "max": 511 }
+  },
+  "bins": {
+    "count": 31225,
+    "adaptive": false,
+    "min_bits": 19,
+    "max_bits": 26
+  },
+  "plots": {
+    "density": "density_distrib-042",
+    "buckets": "particle_bins-042"
+  }
+}

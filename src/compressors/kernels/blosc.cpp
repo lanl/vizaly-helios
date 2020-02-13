@@ -53,12 +53,9 @@ int BLOSCCompressor::compress
   // default: {clevel=9, shuffle=1, sizeof(data), isize, input, output, osize)
   osize = blosc_compress(9, 1, type_size, isize, input, output, osize);
 
-  if (osize < 0) {
+  if (not osize) {
     std::cerr << "Compression failed: " << osize << std::endl;
     return EXIT_FAILURE;
-  }
-  else if (osize > 0) {
-    output = std::realloc(output, osize);
   }
 
   timer.stop();

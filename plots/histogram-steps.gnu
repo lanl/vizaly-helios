@@ -2,7 +2,7 @@
 
 reset
 set terminal postscript eps enhanced color 14 size 18cm, 10cm
-set output "histogram-timesteps.eps"
+set output "histogram-steps.eps"
 set multiplot layout 1,2 title 'particles and density distribution'
 set datafile separator whitespace
 

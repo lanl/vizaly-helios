@@ -1,0 +1,14 @@
+timestep 272
+
+Inflate and deflate data ... done
+	deflate size: 544274270
+	inflate size: 4294917052
+	ratio : 7.891
+Inflate and deflate data ... done
+	deflate size: 635130536
+	inflate size: 4294917052
+	ratio : 6.762
+Inflate and deflate data ... done
+	deflate size: 712075086
+	inflate size: 4294917052
+	ratio : 6.032

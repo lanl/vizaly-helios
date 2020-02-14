@@ -373,6 +373,7 @@ void Density::assignBits() {
       }
     }
   }
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -468,11 +469,39 @@ void Density::dumpBucketDistrib() {
     assert(file.is_open());
     assert(file.good());
 
-    file << "# bins: " << std::to_string(nb_bins) << std::endl;
+    file << "# bins: " << nb_bins << std::endl;
     file << "# col 1: bin " << std::endl;
     file << "# col 2: particle count" << std::endl;
     for (int i = 0; i < nb_bins; ++i)
       file << i << "\t" << total_count[i] << std::endl;
+    file.close();
+  }
+
+  MPI_Barrier(comm);
+}
+
+/* -------------------------------------------------------------------------- */
+void Density::dumpBitsDistrib() {
+
+  if (my_rank == 0) {
+    std::ofstream file("bits_distrib.dat", std::ios::trunc);
+    assert(file.is_open());
+    assert(file.good());
+
+    file << "# bins: " << nb_bins << std::endl;
+    file << "# col 1: density" << std::endl;
+    file << "# col 2: bits" << std::endl;
+
+    if (not use_adaptive_binning) {
+      double const width = (total_rho_max - total_rho_min) / static_cast<double>(nb_bins);
+      for (int k =0; k < nb_bins; ++k) {
+        file << total_rho_min + (k * width) << "\t" << bits[k] << std::endl;
+      }
+    } else {
+      for (int k =0; k < nb_bins; ++k) {
+        file << total_rho_min + bin_ranges[k] << "\t" << bits[k] << std::endl;
+      }
+    }
     file.close();
   }
 
@@ -715,6 +744,9 @@ void Density::run() {
 
   // step 3: compute frequencies and histogram
   computeFrequencies();
+
+  // dump it for plot purposes
+  dumpBitsDistrib();
 
   // step 4: bucket particles
   bucketParticles();

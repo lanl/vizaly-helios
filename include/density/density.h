@@ -60,6 +60,7 @@ private:
   void computeDensityBins();
   void dumpHistogram();
   void dumpBucketDistrib();
+  void dumpBitsDistrib();
   void assignBits();
 
   // particle to density field mapping methods

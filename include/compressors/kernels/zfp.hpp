@@ -38,6 +38,8 @@
 /* -------------------------------------------------------------------------- */
 class ZFPCompressor: public CompressorInterface {
 
+  enum Mode { zfp_ABS, zfp_REL, zfp_BIT };
+
 public:
    ZFPCompressor() { name = "zfp"; }
   ~ZFPCompressor() = default;
@@ -51,7 +53,8 @@ public:
 
 private:
   size_t zfpCompressedSize = 0;
-  int numDims = 0;
+  int dims = 0;
+  Mode zfp_mode_ = zfp_ABS;
 };
 /* -------------------------------------------------------------------------- */
 #endif

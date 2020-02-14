@@ -33,6 +33,8 @@
 /* -------------------------------------------------------------------------- */
 #include <sstream>
 #include <cstring>
+#include <cmath>
+#include <cassert>
 #include "compressors/kernels/zfp.hpp"
 #include "utils/timer.h"
 /* -------------------------------------------------------------------------- */
@@ -55,28 +57,32 @@ int ZFPCompressor::compress
   (void *input, void *&output, std::string data_type, size_t type_size, size_t* n) {
 
   size_t numel = n[0];
-  numDims = 1;
+  dims = 1;
   for (int i = 1; i < 5; i++) {
     if (n[i] != 0) {
       numel *= n[i];
-      numDims++;
+      dims++;
     }
   }
 
   // Read in json compression parameters
   double abs = 1E-3;
   int rel = 32;
-  bool compressionTypeAbs = true;
+  double rate = 1;
 
   if (parameters.count("abs")) {
     std::string value = parameters["abs"];
     abs = std::stod(value);
-    compressionTypeAbs = true;
-  }
-  else if (parameters.count("rel")) {
+    zfp_mode_ = zfp_ABS;
+  } else if (parameters.count("rel")) {
     std::string value = parameters["rel"];
     rel = std::stoi(value);
-    compressionTypeAbs = false;
+    zfp_mode_ = zfp_REL;
+  } else if (parameters.count("bits")) {
+    std::string value = parameters["bits"];
+    rate = std::stoi(value) / std::pow(4, dims);
+    assert(rate);
+    zfp_mode_ = zfp_BIT;
   }
 
   Timer timer;
@@ -87,23 +93,24 @@ int ZFPCompressor::compress
   // allocate meta data for the 1D input array
   zfp_field* field = nullptr;
 
-  if (numDims == 1)
-    field = zfp_field_1d(input, type, numel);
-  else if (numDims == 2)
-    field = zfp_field_2d(input, type, n[1], n[0]);
-  else if (numDims == 3)
-    field = zfp_field_3d(input, type, n[2], n[1], n[0]);
-  else if (numDims == 4)
-    field = zfp_field_4d(input, type, n[3], n[2], n[1], n[0]);
+  switch (dims) {
+    case 1: field = zfp_field_1d(input, type, numel); break;
+    case 2: field = zfp_field_2d(input, type, n[1], n[0]); break;
+    case 3: field = zfp_field_3d(input, type, n[2], n[1], n[0]); break;
+    case 4: field = zfp_field_4d(input, type, n[3], n[2], n[1], n[0]); break;
+    default: break;
+  }
 
   // allocate meta data for a compressed stream
   zfp_stream *zfp = zfp_stream_open(nullptr);
 
   // set absolute/relative error tolerance
-  if (compressionTypeAbs)
-    zfp_stream_set_accuracy(zfp, abs);
-  else
-    zfp_stream_set_precision(zfp, rel);
+  switch (zfp_mode_) {
+    case zfp_ABS: zfp_stream_set_accuracy(zfp, abs); break;
+    case zfp_REL: zfp_stream_set_precision(zfp, rel); break;
+    case zfp_BIT: zfp_stream_set_rate(zfp, rate, type, dims, 0); break;
+    default: break;
+  }
 
   //allocate buffer for compressed data
   size_t bufsize = zfp_stream_maximum_size(zfp, field);
@@ -135,7 +142,6 @@ int ZFPCompressor::compress
   log << ", cRatio: " << type_size * numel / static_cast<float>(bytes);
   log << ", #elements: " << numel << std::endl;
   log << name << " ~ CompressTime: " << timer.getDuration() << " s"<< std::endl;
-
   return EXIT_SUCCESS;
 }
 
@@ -143,29 +149,34 @@ int ZFPCompressor::compress
 int ZFPCompressor::decompress
   (void *&input, void *&output, std::string data_type, size_t type_size, size_t* n) {
 
-  numDims = 1;
+  dims = 1;
   size_t numel = n[0];
   for (int i = 1; i < 5; i++)
     if (n[i] != 0) {
       numel *= n[i];
-      numDims++;
+      dims++;
     }
 
   // Read in json compression parameters
   double abs = 1E-3;
   int rel = 32;
-  bool compressionTypeAbs = true;
+  double rate = 1;
 
   if (parameters.count("abs")) {
     std::string value = parameters["abs"];
     abs = std::stod(value);
-    compressionTypeAbs = true;
-  }
-  else if (parameters.count("rel")) {
+    zfp_mode_ = zfp_ABS;
+  } else if (parameters.count("rel")) {
     std::string value = parameters["rel"];
     rel = std::stoi(value);
-    compressionTypeAbs = false;
+    zfp_mode_ = zfp_REL;
+  } else if (parameters.count("bits")) {
+    std::string value = parameters["bits"];
+    rate = std::stoi(value) / std::pow(4, dims);
+    assert(rate);
+    zfp_mode_ = zfp_BIT;
   }
+
 
   Timer timer;
   timer.start();
@@ -177,23 +188,24 @@ int ZFPCompressor::decompress
 
   zfp_field* field = nullptr;
 
-  if (numDims == 1)
-    field = zfp_field_1d(output, type, numel);
-  else if (numDims == 2)
-    field = zfp_field_2d(output, type, n[1], n[0]);
-  else if (numDims == 3)
-    field = zfp_field_3d(output, type, n[2], n[1], n[0]);
-  else if (numDims == 4)
-    field = zfp_field_4d(output, type, n[3], n[2], n[1], n[0]);
+  switch (dims) {
+    case 1: field = zfp_field_1d(input, type, numel); break;
+    case 2: field = zfp_field_2d(input, type, n[1], n[0]); break;
+    case 3: field = zfp_field_3d(input, type, n[2], n[1], n[0]); break;
+    case 4: field = zfp_field_4d(input, type, n[3], n[2], n[1], n[0]); break;
+    default: break;
+  }
 
   // allocate meta data for a compressed stream
   zfp_stream* zfp = zfp_stream_open(nullptr);
 
   // set absolute/relative error tolerance
-  if (compressionTypeAbs)
-    zfp_stream_set_accuracy(zfp, abs);
-  else
-    zfp_stream_set_precision(zfp, rel);
+  switch (zfp_mode_) {
+    case zfp_ABS: zfp_stream_set_accuracy(zfp, abs); break;
+    case zfp_REL: zfp_stream_set_precision(zfp, rel); break;
+    case zfp_BIT: zfp_stream_set_rate(zfp, rate, type, dims, 0); break;
+    default: break;
+  }
 
   // allocate buffer for decompressed data and transfer data
   size_t bufsize = zfp_stream_maximum_size(zfp, field);

@@ -633,6 +633,9 @@ void Density::process(int step) {
     kernel_lossy->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
     for (int k = 0; k < nb_elems[0]; ++k)
       decompressed[step].emplace_back(static_cast<float*>(raw_deflate)[k]);
+
+    std::free(raw_inflate);
+    std::free(raw_deflate);
   }
 
   MPI_Barrier(comm);
@@ -641,9 +644,8 @@ void Density::process(int step) {
   if (my_rank == 0) {
     std::cout << "done" << std::endl;
     // print stats
-    std::printf("\tdeflate size: %lu\n", total_bytes[0]);
-    std::printf("\tinflate size: %lu\n", total_bytes[1]);
-    std::printf("\tratio : %.3f\n", total_bytes[1] / double(total_bytes[0]));
+    std::printf(" \u2022 raw: %lu, zip: %lu\n", total_bytes[1], total_bytes[0]);
+    std::printf(" \u2022 rate: %.3f\n", total_bytes[1] / double(total_bytes[0]));
     std::fflush(stdout);
   }
 #endif

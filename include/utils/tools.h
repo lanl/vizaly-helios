@@ -41,6 +41,7 @@ namespace tools {
 
   std::string base(std::string const& path);
   bool createFolder(std::string const& folder);
+  void ltrim(std::string& line);
   bool isPowerOfTwo(int n);
   std::string extractFileName(std::string const& input);
   bool valid(int argc, char **argv, int rank= 0, int nb_ranks= 1);

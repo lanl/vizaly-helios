@@ -79,6 +79,14 @@ bool createFolder(std::string const &folder) {
 }
 
 /* -------------------------------------------------------------------------- */
+void ltrim(std::string& line) {
+  size_t off = line.find_first_not_of(" \t\r\n");
+  if (off != std::string::npos) {
+    line.erase(0, off);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 bool isPowerOfTwo(int n) {
 
   if (n != 0) {

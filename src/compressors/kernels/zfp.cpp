@@ -189,10 +189,10 @@ int ZFPCompressor::decompress
   zfp_field* field = nullptr;
 
   switch (dims) {
-    case 1: field = zfp_field_1d(input, type, numel); break;
-    case 2: field = zfp_field_2d(input, type, n[1], n[0]); break;
-    case 3: field = zfp_field_3d(input, type, n[2], n[1], n[0]); break;
-    case 4: field = zfp_field_4d(input, type, n[3], n[2], n[1], n[0]); break;
+    case 1: field = zfp_field_1d(output, type, numel); break;
+    case 2: field = zfp_field_2d(output, type, n[1], n[0]); break;
+    case 3: field = zfp_field_3d(output, type, n[2], n[1], n[0]); break;
+    case 4: field = zfp_field_4d(output, type, n[3], n[2], n[1], n[0]); break;
     default: break;
   }
 

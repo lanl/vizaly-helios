@@ -16,10 +16,11 @@ colors[4] = "#0000FF"
 colors[6] = "#800080"
 colors[7] = "#A0522D"
 
-array titles[3];
+array titles[4];
 titles[1] = "t = 042, bins = {/Symbol r}_{max} = 31225"
-titles[2] = "t = 272, bins = {/Symbol r}_{max} = 31225"
-titles[3] = "t = 499, bins = {/Symbol r}_{max} = 31225"
+titles[2] = "t = 272, bins = {/Symbol r}_{max}"
+titles[3] = "t = 499, bins = {/Symbol r}_{max}"
+titles[4] = "t = 499, bins = 2 {/Symbol r}_{max}"
 
 # ---------------
 #set title 'density'
@@ -51,7 +52,8 @@ set logscale y 10
 
 plot 'data/STEP042/particle_distrib.dat' using 1:2 title titles[3] lc rgb colors[3] with boxes,\
      'data/STEP272/particle_distrib.dat' using 1:2 title titles[2] lc rgb colors[2] with boxes,\
-     'data/STEP499/particle_distrib_7.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes
+     'data/STEP499/particle_distrib_7.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
+     'data/STEP499_2/particle_distrib.dat' using 1:2 title titles[4] lc rgb colors[4] with boxes
 
 # ---------------
 reset

@@ -1,0 +1,11 @@
+timestep 499
+
+Inflate and deflate data ... done
+ • raw: 4294905436, zip: 577178839
+ • rate: 7.441
+Inflate and deflate data ... done
+ • raw: 4294905436, zip: 646036957
+ • rate: 6.648
+Inflate and deflate data ... done
+ • raw: 4294905436, zip: 700861522
+ • rate: 6.128

@@ -5,7 +5,7 @@
 #SBATCH --partition scaling
 #SBATCH --job-name density
 
-timestep=272
+timestep=499
 hacc="/home/hoby/dev/exasky/hacc"
 power_spectrum="${hacc}/trunk/Darwin/mpi/bin/hacc_pk_gio_auto"
 particles="/projects/groups/vizproject/dssdata/cosmo/Argonne_L360_hacc001/STEP${timestep}/m000.full.mpicosmo.${timestep}"

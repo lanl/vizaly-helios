@@ -6,7 +6,7 @@
 #SBATCH --job-name density
 
 ranks=8
-timestep=272
+timestep=499
 build="/projects/exasky/hoby-projects/helios/build"
 input_json="../inputs/density_darwin_${timestep}.json"
 

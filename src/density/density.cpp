@@ -101,7 +101,6 @@ Density::Density(const char* in_path, int in_rank, int in_nb_ranks, MPI_Comm in_
 
   // data binning
   nb_bins = json["bins"]["count"];
-  nb_bins *= 2;
   assert(nb_bins > 0);
   histogram.resize(nb_bins);
   buckets.resize(nb_bins);

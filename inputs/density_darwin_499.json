@@ -27,7 +27,7 @@
   "bins": {
     "count": 31225,
     "adaptive": false,
-    "min_bits": 19,
+    "min_bits": 20,
     "max_bits": 26
   },
   "plots": {

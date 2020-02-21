@@ -2,7 +2,7 @@
 
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 1
-#SBATCH --partition scaling
+#SBATCH --partition skylake-gold
 #SBATCH --job-name spectrum
 
 timestep=499

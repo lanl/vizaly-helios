@@ -620,17 +620,17 @@ void Density::process(int step) {
     void* raw_inflate = nullptr;
     void* raw_deflate = nullptr;
 
-    auto kernel_fpzip = CompressorFactory::create("fpzip");
-    kernel_fpzip->init();
-    kernel_fpzip->parameters["bits"] = std::to_string(bits[j]);
-    kernel_fpzip->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
+    auto kernel_lossy = CompressorFactory::create("zfp");
+    kernel_lossy->init();
+    kernel_lossy->parameters["bits"] = std::to_string(bits[j]);
+    kernel_lossy->compress(raw_data, raw_inflate, "float", sizeof(float), nb_elems);
     dataset.clear();
 
     // update compression metrics
-    local_bytes[0] += kernel_fpzip->getBytes();
+    local_bytes[0] += kernel_lossy->getBytes();
 
     // step 3: deflate data and store it
-    kernel_fpzip->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
+    kernel_lossy->decompress(raw_inflate, raw_deflate, "float", sizeof(float), nb_elems);
     for (int k = 0; k < nb_elems[0]; ++k)
       decompressed[step].emplace_back(static_cast<float*>(raw_deflate)[k]);
   }

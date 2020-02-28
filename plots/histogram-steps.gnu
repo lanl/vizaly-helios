@@ -9,15 +9,15 @@ set datafile separator whitespace
 # ---------------
 array colors[7];
 colors[1] = "#FF00FF"
-colors[2] = "#006400"
-colors[3] = "#CB0707"
+colors[2] = "#CB0707"
+colors[3] = "#006400"
 colors[5] = "#A0522D"
 colors[4] = "#0000FF"
 colors[6] = "#800080"
 colors[7] = "#A0522D"
 
 array titles[3];
-titles[1] = "t = 272, bins = {/Symbol r}_{max}"
+titles[1] = "t = 272, bins = {/Symbol r}_{max}, distrib 2"
 titles[2] = "t = 499, bins = {/Symbol r}_{max}, distrib 1"
 titles[3] = "t = 499, bins = {/Symbol r}_{max}, distrib 2"
 
@@ -49,7 +49,7 @@ set key Left reverse below maxcols 1
 set grid mytics xtics
 set logscale y 10
 
-plot 'data/STEP272/particle_distrib.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
+plot 'data/STEP272_2/particle_distrib.dat' using 1:2 title titles[1] lc rgb colors[1] with boxes,\
      'data/STEP499/particle_distrib_7.dat' using 1:2 title titles[2] lc rgb colors[2] with boxes,\
      'data/STEP499_7/particle_distrib.dat' using 1:2 title titles[3] lc rgb colors[3] with boxes
 

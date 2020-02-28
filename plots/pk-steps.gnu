@@ -9,15 +9,15 @@ set multiplot layout 1,2 title ""
 
 array colors[7];
 colors[1] = "#FF00FF"
-colors[2] = "#006400"
-colors[3] = "#CB0707"
+colors[2] = "#CB0707"
+colors[3] = "#006400"
 colors[4] = "#0000FF"
 colors[5] = "#800080"
 colors[6] = "#A0522D"
 colors[7] = "#000000"
 
 array titles[4];
-titles[1] = "t = 272"
+titles[1] = "t = 272, distrib 2"
 titles[2] = "t = 499, distrib 1"
 titles[3] = "t = 499, distrib 2"
 #titles[1] = "ratio=5.0, k = 4096"
@@ -40,15 +40,15 @@ set grid
 set yrange [16:32]
 set logscale x 10
 
-plot 'data/bits_distrib.dat' using 1:2 title titles[1] w lines lc rgb colors[1],\
+plot 'data/STEP272_2/bits_distrib.dat' using 1:2 title titles[1] w lines lc rgb colors[1],\
      'data/bits_distrib.dat' using 1:2 title titles[2] w lines lc rgb colors[2],\
      'data/STEP499_7/bits_distrib.dat' using 1:2 title titles[3] w lines lc rgb colors[3]
 
 # ---------------
 reset
-titles[1] = "t = 272, bins = {/Symbol r}_{max}, ratio = 7.89"
+titles[1] = "t = 272, bins = {/Symbol r}_{max}, ratio = 6.42"
 titles[2] = "t = 499, bins = {/Symbol r}_{max}, ratio = 7.42"
-titles[3] = "t = 499, bins = {/Symbol r}_{max}, ratio = 6.42"
+titles[3] = "t = 499, bins = {/Symbol r}_{max}, ratio = 6.43"
 
 set title 'discrepancy'
 set xlabel "k"
@@ -67,7 +67,7 @@ set format y "%.3f"
 threshold(x) = 1.01
 
 plot threshold(x) title "threshold" w lines lc rgb "#000000",\
-     'data/STEP272/pk-ratio.dat' using 1:($3/$2) title titles[1] w lines lc rgb colors[1],\
+     'data/STEP272_2/pk-ratio.dat' using 1:($3/$2) title titles[1] w lines lc rgb colors[1],\
      'data/STEP499/pk-ratio.dat' using 1:($3/$2) title titles[2] w lines lc rgb colors[2],\
      'data/STEP499_7/pk-ratio.dat' using 1:($3/$2) title titles[3] w lines lc rgb colors[3]
 

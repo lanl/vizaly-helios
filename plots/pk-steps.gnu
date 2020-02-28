@@ -17,10 +17,9 @@ colors[6] = "#A0522D"
 colors[7] = "#000000"
 
 array titles[4];
-titles[1] = "t = 042"
-titles[2] = "t = 272"
-titles[3] = "t = 499"
-titles[4] = "t = 499, bins = 2{/Symbol r}_{max}"
+titles[1] = "t = 272"
+titles[2] = "t = 499, distrib 1"
+titles[3] = "t = 499, distrib 2"
 #titles[1] = "ratio=5.0, k = 4096"
 #titles[2] = "ratio=7.5, k = {/Symbol r}_{max} = 31225"
 #titles[3] = "ratio=5.8, k = 2n\\^{2/5} = 3565, adaptive"
@@ -43,13 +42,13 @@ set logscale x 10
 
 plot 'data/bits_distrib.dat' using 1:2 title titles[1] w lines lc rgb colors[1],\
      'data/bits_distrib.dat' using 1:2 title titles[2] w lines lc rgb colors[2],\
-     'data/bits_distrib.dat' using 1:2 title titles[3] w lines lc rgb colors[3]
+     'data/STEP499_7/bits_distrib.dat' using 1:2 title titles[3] w lines lc rgb colors[3]
 
 # ---------------
 reset
-titles[1] = "t = 042, bins = {/Symbol r}_{max}, ratio = 3.23"
-titles[2] = "t = 272, bins = {/Symbol r}_{max}, ratio = 7.89"
-titles[3] = "t = 499, bins = {/Symbol r}_{max}, ratio = 7.42"
+titles[1] = "t = 272, bins = {/Symbol r}_{max}, ratio = 7.89"
+titles[2] = "t = 499, bins = {/Symbol r}_{max}, ratio = 7.42"
+titles[3] = "t = 499, bins = {/Symbol r}_{max}, ratio = 6.42"
 
 set title 'discrepancy'
 set xlabel "k"
@@ -68,9 +67,9 @@ set format y "%.3f"
 threshold(x) = 1.01
 
 plot threshold(x) title "threshold" w lines lc rgb "#000000",\
-     'data/STEP042/pk-ratio.dat' using 1:($3/$2) title titles[1] w lines lc rgb colors[1],\
-     'data/STEP499/pk-ratio.dat' using 1:($3/$2) title titles[3] w lines lc rgb colors[3],\
-     'data/STEP499_3/pk-ratio.dat' using 1:($5/$2) title titles[4] w lines lc rgb colors[4]
+     'data/STEP272/pk-ratio.dat' using 1:($3/$2) title titles[1] w lines lc rgb colors[1],\
+     'data/STEP499/pk-ratio.dat' using 1:($3/$2) title titles[2] w lines lc rgb colors[2],\
+     'data/STEP499_7/pk-ratio.dat' using 1:($3/$2) title titles[3] w lines lc rgb colors[3]
 
-# 'data/STEP272/pk-ratio.dat' using 1:($3/$2) title titles[2] w lines lc rgb colors[2],\
+
 unset multiplot

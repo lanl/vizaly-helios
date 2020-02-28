@@ -27,8 +27,8 @@
   "bins": {
     "count": 31225,
     "adaptive": false,
-    "min_bits": 19,
-    "max_bits": 26
+    "min_bits": 21,
+    "max_bits": 30
   },
   "plots": {
     "density": "density_distrib-272",

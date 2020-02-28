@@ -28,7 +28,7 @@
     "count": 31225,
     "adaptive": false,
     "min_bits": 20,
-    "max_bits": 26
+    "max_bits": 30
   },
   "plots": {
     "density": "density_distrib-499",

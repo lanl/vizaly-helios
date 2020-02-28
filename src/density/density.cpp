@@ -348,7 +348,7 @@ void Density::computeDensityBins() {
 /* -------------------------------------------------------------------------- */
 void Density::assignBits() {
 
-  bool const mode = 2;
+  bool const mode = 1;
 
   if (not use_adaptive_binning) {
     // just assign bits heuristically for now.

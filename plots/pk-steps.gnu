@@ -2,7 +2,7 @@
 
 reset
 set terminal postscript eps enhanced color 14 size 17cm, 9cm
-set output "spectrum-steps.eps"
+set output "pk-steps.eps"
 
 set multiplot layout 1,2 title ""
 #"power spectrum, n = 1.07 billion particles, 32 GB per field"
